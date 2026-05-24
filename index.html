@@ -1,0 +1,2448 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Operação PRF — Perfil de Concurseiro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0d0c;
+    --bg-2:#111513;
+    --panel:#15191770;
+    --panel-solid:#161a18;
+    --line:#22282499;
+    --line-strong:#2e3631;
+    --text:#e8e6df;
+    --muted:#8a8a7d;
+    --amber:#f4b740;
+    --amber-2:#d99316;
+    --green:#5fae6a;
+    --red:#c84d3c;
+    --yellow:#e7c14d;
+    --purple:#9b6cd6;
+    --brown:#8a5a3b;
+    --grey:#2a2e2b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;min-height:100vh;overflow-x:hidden}
+  body{
+    background:
+      radial-gradient(ellipse at top right, rgba(244,183,64,0.06), transparent 50%),
+      radial-gradient(ellipse at bottom left, rgba(95,174,106,0.04), transparent 60%),
+      var(--bg);
+    background-attachment:fixed;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.015) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px);
+    background-size:40px 40px;
+    mask-image:radial-gradient(ellipse at center, black 30%, transparent 80%);
+  }
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  }
+
+  /* TOP BAR */
+  .topbar{
+    position:relative;z-index:2;
+    display:flex;justify-content:space-between;align-items:center;
+    padding:18px 36px;border-bottom:1px solid var(--line);
+    background:rgba(11,13,12,0.7);backdrop-filter:blur(10px);
+    font-size:11px;letter-spacing:0.18em;text-transform:uppercase;
+  }
+  .topbar .left{display:flex;gap:24px;align-items:center;color:var(--muted)}
+  .topbar .brand{color:var(--amber);font-weight:700;letter-spacing:0.3em}
+  .topbar .brand::before{content:"";display:inline-block;width:8px;height:8px;background:var(--amber);margin-right:10px;animation:pulse 2s infinite;border-radius:50%;vertical-align:middle}
+  @keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(244,183,64,0.5)}50%{opacity:0.5;box-shadow:0 0 0 6px rgba(244,183,64,0)}}
+  .topbar .right{display:flex;gap:16px;align-items:center}
+  .file-status{color:var(--muted);font-size:10px}
+  .file-status.connected{color:var(--green)}
+  .btn{
+    background:transparent;border:1px solid var(--line-strong);color:var(--text);
+    padding:8px 16px;font-family:inherit;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;
+    cursor:pointer;transition:all 0.2s;
+  }
+  .btn:hover{background:var(--amber);color:#000;border-color:var(--amber)}
+  .btn.primary{background:var(--amber);color:#000;border-color:var(--amber)}
+  .btn.primary:hover{background:var(--amber-2);border-color:var(--amber-2)}
+  .btn.ghost:hover{background:var(--line);color:var(--text)}
+
+  /* MAIN GRID */
+  .main{position:relative;z-index:2;padding:36px;display:grid;gap:24px;max-width:1600px;margin:0 auto;grid-template-columns:1fr;}
+  @media(min-width:1100px){.main{grid-template-columns:380px 1fr;grid-template-areas:"profile hero" "stats stats" "questions questions" "cycle level" "calendar calendar" "log log"}}
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    backdrop-filter:blur(6px);
+    padding:28px;
+    position:relative;
+  }
+  .card .corner{position:absolute;width:12px;height:12px;border:1px solid var(--amber)}
+  .card .corner.tl{top:-1px;left:-1px;border-right:none;border-bottom:none}
+  .card .corner.tr{top:-1px;right:-1px;border-left:none;border-bottom:none}
+  .card .corner.bl{bottom:-1px;left:-1px;border-right:none;border-top:none}
+  .card .corner.br{bottom:-1px;right:-1px;border-left:none;border-top:none}
+  .card-title{
+    font-size:10px;letter-spacing:0.3em;text-transform:uppercase;color:var(--muted);
+    margin-bottom:18px;display:flex;align-items:center;gap:10px;
+  }
+  .card-title::before{content:"//";color:var(--amber)}
+  .card-title .badge{margin-left:auto;font-size:9px;color:var(--muted);border:1px solid var(--line-strong);padding:2px 8px}
+
+  /* PROFILE CARD */
+  .profile{grid-area:profile;display:flex;flex-direction:column;align-items:center;text-align:center}
+  .avatar-wrap{position:relative;margin-bottom:20px}
+  .avatar{
+    width:160px;height:160px;border-radius:50%;
+    background:var(--bg-2) center/cover;
+    border:2px solid var(--amber);
+    box-shadow:0 0 0 6px var(--bg),0 0 0 7px var(--line-strong),0 0 40px rgba(244,183,64,0.2);
+    cursor:pointer;transition:transform 0.3s;
+  }
+  .avatar:hover{transform:scale(1.02)}
+  .avatar-ring{
+    position:absolute;inset:-14px;border:1px dashed var(--line-strong);border-radius:50%;
+    animation:rotate 30s linear infinite;
+  }
+  @keyframes rotate{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  .profile h1{font-family:'Fraunces',serif;font-size:30px;font-weight:800;margin-bottom:4px;letter-spacing:-0.02em}
+  .profile .codename{color:var(--amber);font-size:10px;letter-spacing:0.3em;text-transform:uppercase;margin-bottom:14px}
+  .profile-edit{margin-top:14px;display:flex;gap:8px}
+  .quote{
+    border-left:2px solid var(--amber);padding:8px 14px;margin-top:18px;
+    font-family:'Fraunces',serif;font-style:italic;font-size:13px;color:var(--muted);text-align:left;
+  }
+
+  /* HERO */
+  .hero{grid-area:hero;background:var(--panel);border:1px solid var(--line);padding:36px 40px;position:relative;overflow:hidden}
+  .hero::before{
+    content:"";position:absolute;top:0;right:0;width:60%;height:100%;
+    background:linear-gradient(135deg,transparent,rgba(244,183,64,0.04));
+    pointer-events:none;
+  }
+  .hero .label{font-size:10px;letter-spacing:0.3em;color:var(--amber);text-transform:uppercase;margin-bottom:18px}
+  .hero h2{font-family:'Bebas Neue',sans-serif;font-size:74px;line-height:0.95;letter-spacing:0.01em;margin-bottom:12px}
+  .hero h2 span{color:var(--amber)}
+  .hero .sub{color:var(--muted);font-size:13px;max-width:540px;line-height:1.7}
+  .hero .meta{display:flex;gap:32px;margin-top:28px;flex-wrap:wrap}
+  .hero .meta-item{font-size:11px}
+  .hero .meta-item b{display:block;font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--text);letter-spacing:0.05em;margin-bottom:2px}
+  .hero .meta-item small{color:var(--muted);letter-spacing:0.2em;text-transform:uppercase;font-size:9px}
+
+  /* STATS ROW */
+  .stats{grid-area:stats;display:grid;gap:16px;grid-template-columns:repeat(2,1fr)}
+  @media(min-width:700px){.stats{grid-template-columns:repeat(4,1fr)}}
+  .stat{
+    background:var(--panel);border:1px solid var(--line);padding:22px;position:relative;
+    transition:border-color 0.2s;
+  }
+  .stat:hover{border-color:var(--amber)}
+  .stat .num{font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:0.02em;line-height:1;color:var(--amber)}
+  .stat .lbl{font-size:9px;letter-spacing:0.25em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+  .stat .sub{font-size:10px;color:var(--muted);margin-top:8px;opacity:0.7}
+
+  /* CYCLE */
+  .cycle{grid-area:cycle}
+  .cycle svg{width:100%;height:auto;display:block;margin-top:8px}
+  .cycle-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+  .cycle-list{margin-top:12px;display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto}
+  .cycle-item{display:flex;align-items:center;gap:10px;font-size:11px;padding:7px 10px;border:1px solid var(--line-strong);background:rgba(0,0,0,0.2);transition:all 0.15s}
+  .cycle-item:hover{border-color:var(--line)}
+  .cycle-item-current{border-color:var(--amber);background:rgba(244,183,64,0.08);box-shadow:inset 0 0 0 1px rgba(244,183,64,0.15)}
+  .cycle-item .cycle-pos{font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--muted);letter-spacing:0.1em;width:24px;flex-shrink:0}
+  .cycle-item-current .cycle-pos{color:var(--amber)}
+  .cycle-item .cycle-name{flex:1;color:var(--text)}
+  .cycle-item .cycle-name em{font-style:normal;color:var(--amber);font-size:9px;letter-spacing:0.2em;text-transform:uppercase;margin-left:6px}
+  .cycle-item .cycle-weight{color:var(--amber);font-size:10px;opacity:0.7}
+  .cycle-item button{background:none;border:none;color:var(--muted);cursor:pointer;font-family:inherit;font-size:14px;padding:2px 4px;line-height:1;transition:color 0.15s}
+  .cycle-item .cycle-btn-mark:hover{color:var(--amber)}
+  .cycle-item-current .cycle-btn-mark{color:var(--amber)}
+  .cycle-item .cycle-btn-del{font-size:16px}
+  .cycle-item .cycle-btn-del:hover{color:var(--red)}
+  .cycle svg{width:100%;height:auto;display:block;margin:8px auto}
+
+  /* LEVEL */
+  .level{grid-area:level}
+  .level-display{display:flex;align-items:center;gap:20px;margin-bottom:18px}
+  .level-num{
+    font-family:'Bebas Neue',sans-serif;font-size:90px;line-height:0.9;
+    background:linear-gradient(180deg,var(--amber),var(--amber-2));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 60px rgba(244,183,64,0.3);
+  }
+  .level-info{flex:1}
+  .level-rank{font-family:'Fraunces',serif;font-size:22px;font-weight:600;margin-bottom:2px}
+  .level-tag{font-size:10px;letter-spacing:0.25em;text-transform:uppercase;color:var(--muted)}
+  .progress{height:10px;background:var(--bg-2);border:1px solid var(--line-strong);position:relative;overflow:hidden;margin-top:8px}
+  .progress-fill{
+    height:100%;background:linear-gradient(90deg,var(--amber-2),var(--amber));
+    transition:width 0.6s cubic-bezier(.2,.8,.2,1);position:relative;
+  }
+  .progress-fill::after{
+    content:"";position:absolute;inset:0;
+    background-image:linear-gradient(45deg,rgba(0,0,0,0.15) 25%,transparent 25%,transparent 50%,rgba(0,0,0,0.15) 50%,rgba(0,0,0,0.15) 75%,transparent 75%);
+    background-size:14px 14px;animation:stripe 2s linear infinite;
+  }
+  @keyframes stripe{from{background-position:0 0}to{background-position:14px 0}}
+  .progress-text{display:flex;justify-content:space-between;margin-top:8px;font-size:10px;color:var(--muted);letter-spacing:0.1em}
+  .ranks-list{margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:10px}
+  .rank-row{display:flex;justify-content:space-between;padding:5px 8px;border:1px solid var(--line-strong);color:var(--muted)}
+  .rank-row.current{border-color:var(--amber);color:var(--amber);background:rgba(244,183,64,0.05)}
+  .rank-row.done{color:var(--text)}
+
+  /* CALENDAR */
+  .calendar{grid-area:calendar}
+  .calendar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px}
+  .year-nav{display:flex;align-items:center;gap:12px}
+  .year-nav button{background:transparent;border:1px solid var(--line-strong);color:var(--text);width:30px;height:30px;cursor:pointer;font-family:inherit}
+  .year-nav button:hover{background:var(--amber);color:#000;border-color:var(--amber)}
+  .year-nav h3{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.1em}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:10px;color:var(--muted)}
+  .legend span{display:flex;align-items:center;gap:6px}
+  .legend i{width:12px;height:12px;display:inline-block;border:1px solid rgba(255,255,255,0.1)}
+  .months-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px}
+  .month{background:var(--bg-2);border:1px solid var(--line);padding:14px}
+  .month h4{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:0.15em;color:var(--amber);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+  .month h4 small{color:var(--muted);font-size:9px;letter-spacing:0.2em}
+  .weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;font-size:8px;color:var(--muted);text-align:center;margin-bottom:4px;letter-spacing:0.1em}
+  .days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+  .day{
+    aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+    font-size:10px;cursor:pointer;border:1px solid transparent;
+    background:var(--grey);color:var(--muted);transition:all 0.15s;
+    position:relative;
+  }
+  .day:hover{border-color:var(--amber);transform:scale(1.1);z-index:2}
+  .day.empty{background:transparent;cursor:default}
+  .day.empty:hover{border-color:transparent;transform:none}
+  .day.today{outline:2px solid var(--amber);outline-offset:1px}
+  .day[data-status="red"]{background:var(--red);color:#fff}
+  .day[data-status="yellow"]{background:var(--yellow);color:#000}
+  .day[data-status="green"]{background:var(--green);color:#fff}
+  .day[data-status="brown"]{background:var(--brown);color:#fff}
+
+  /* LOG / ACTIONS */
+  .log{grid-area:log}
+  .log-grid{display:grid;grid-template-columns:1fr;gap:18px}
+  @media(min-width:800px){.log-grid{grid-template-columns:1fr 1fr}}
+
+  /* QUESTIONS */
+  .questions{grid-area:questions}
+  .q-grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:6px}
+  @media(min-width:900px){.q-grid{grid-template-columns:1fr 1fr 1fr 240px}}
+  .q-source{background:var(--bg-2);border:1px solid var(--line-strong);padding:16px;position:relative}
+  .q-source:hover{border-color:var(--line)}
+  .q-source-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .q-tag{font-family:'Bebas Neue',sans-serif;font-size:10px;letter-spacing:0.25em;color:var(--amber);border:1px solid var(--amber);padding:2px 8px}
+  .q-name{font-family:'Fraunces',serif;font-size:16px;font-weight:600;color:var(--text)}
+  .q-controls{display:flex;align-items:center;gap:4px;margin-bottom:10px}
+  .q-controls input{
+    flex:1;min-width:50px;background:var(--bg);border:1px solid var(--line-strong);color:var(--amber);
+    font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:0.04em;text-align:center;
+    padding:6px 4px;outline:none;
+  }
+  .q-controls input:focus{border-color:var(--amber)}
+  .q-controls input::-webkit-outer-spin-button,.q-controls input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .q-btn{
+    background:transparent;border:1px solid var(--line-strong);color:var(--muted);
+    font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;
+    padding:6px 8px;cursor:pointer;transition:all 0.15s;min-width:34px;
+  }
+  .q-btn:hover{background:var(--line);color:var(--text)}
+  .q-btn.primary{border-color:var(--amber);color:var(--amber)}
+  .q-btn.primary:hover{background:var(--amber);color:#000}
+  .q-bar{height:4px;background:var(--bg);border:1px solid var(--line-strong);overflow:hidden}
+  .q-bar-fill{height:100%;background:linear-gradient(90deg,var(--amber-2),var(--amber));transition:width 0.6s cubic-bezier(.2,.8,.2,1)}
+  .q-total-card{
+    background:linear-gradient(135deg,rgba(244,183,64,0.08),rgba(244,183,64,0.02));
+    border:1px solid var(--amber);padding:16px;text-align:center;
+    display:flex;flex-direction:column;justify-content:center;align-items:center;position:relative;
+  }
+  .q-total-card::before,.q-total-card::after{content:"";position:absolute;width:14px;height:14px;border:1px solid var(--amber)}
+  .q-total-card::before{top:-1px;left:-1px;border-right:none;border-bottom:none}
+  .q-total-card::after{bottom:-1px;right:-1px;border-left:none;border-top:none}
+  .q-total-num{
+    font-family:'Bebas Neue',sans-serif;font-size:64px;letter-spacing:0.02em;line-height:1;
+    background:linear-gradient(180deg,var(--amber),var(--amber-2));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .q-total-label{font-size:10px;letter-spacing:0.25em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+  .q-total-sub{font-size:9px;letter-spacing:0.15em;color:var(--muted);margin-top:10px;opacity:0.7}
+  .log-form{display:flex;flex-direction:column;gap:10px}
+  .field{display:flex;flex-direction:column;gap:4px}
+  .field label{font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted)}
+  .field input,.field select,.field textarea{
+    background:var(--bg-2);border:1px solid var(--line-strong);color:var(--text);
+    padding:10px 12px;font-family:inherit;font-size:12px;outline:none;transition:border-color 0.2s;
+  }
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--amber)}
+  .recent{display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto}
+  .recent-item{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    padding:10px 12px;background:var(--bg-2);border:1px solid var(--line-strong);font-size:11px;
+  }
+  .recent-item .date{color:var(--amber);font-weight:600}
+  .recent-item .hrs{color:var(--text)}
+  .recent-item .note{color:var(--muted);font-style:italic;flex:1;margin:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .recent-item .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+  /* MODAL */
+  .modal-bg{
+    position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);
+    z-index:100;display:none;align-items:center;justify-content:center;padding:20px;
+  }
+  .modal-bg.show{display:flex}
+  .modal{
+    background:var(--bg-2);border:1px solid var(--amber);padding:30px;
+    max-width:480px;width:100%;position:relative;
+  }
+  .modal h3{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.1em;margin-bottom:18px;color:var(--amber)}
+  .modal .field{margin-bottom:12px}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+  .close-x{position:absolute;top:14px;right:14px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px}
+  .close-x:hover{color:var(--amber)}
+
+  /* NOTIFICATION */
+  .toast{
+    position:fixed;bottom:24px;right:24px;z-index:200;
+    background:var(--bg-2);border:1px solid var(--amber);color:var(--text);
+    padding:14px 18px;font-size:12px;
+    transform:translateY(100px);opacity:0;transition:all 0.3s;
+  }
+  .toast.show{transform:translateY(0);opacity:1}
+
+  /* FOOTER */
+  .footer{
+    position:relative;z-index:2;text-align:center;padding:24px;
+    font-size:10px;letter-spacing:0.25em;text-transform:uppercase;color:var(--muted);
+    border-top:1px solid var(--line);margin-top:20px;
+  }
+  .footer span{color:var(--amber)}
+
+  /* TABS */
+  .tabs{display:flex;gap:0;margin-left:8px}
+  .tab{
+    background:transparent;border:none;border-bottom:2px solid transparent;
+    color:var(--muted);padding:6px 14px;font-family:inherit;font-size:10px;
+    letter-spacing:0.25em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;
+  }
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--amber);border-bottom-color:var(--amber)}
+  .view{display:none}
+  .view.active{display:block}
+
+  /* METHODS VIEW */
+  .methods-page{position:relative;z-index:2;padding:36px;max-width:1400px;margin:0 auto}
+  .methods-header{margin-bottom:30px}
+  .methods-header h2{font-family:'Bebas Neue',sans-serif;font-size:54px;letter-spacing:0.02em;line-height:1}
+  .methods-header h2 span{color:var(--amber)}
+  .methods-header p{color:var(--muted);font-size:13px;margin-top:10px;max-width:680px;line-height:1.7}
+  .methods-grid{display:grid;gap:20px;grid-template-columns:1fr}
+  @media(min-width:900px){.methods-grid{grid-template-columns:1fr 1fr}}
+  .method-card{
+    background:var(--panel);border:1px solid var(--line);padding:24px;position:relative;
+    transition:border-color 0.2s;
+  }
+  .method-card:hover{border-color:var(--line-strong)}
+  .method-card .num{
+    position:absolute;top:18px;right:20px;font-family:'Bebas Neue',sans-serif;
+    font-size:42px;color:var(--line-strong);letter-spacing:0.02em;line-height:1;
+  }
+  .method-card h3{font-family:'Fraunces',serif;font-size:22px;font-weight:600;margin-bottom:4px}
+  .method-card .ico{
+    display:inline-block;width:38px;height:38px;border:1px solid var(--amber);
+    color:var(--amber);text-align:center;line-height:36px;margin-bottom:14px;
+    font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:0.1em;
+  }
+  .method-card .desc{color:var(--muted);font-size:12px;line-height:1.7;margin-bottom:16px;padding-right:50px}
+  .method-card textarea{
+    width:100%;background:var(--bg-2);border:1px solid var(--line-strong);color:var(--text);
+    padding:12px;font-family:inherit;font-size:12px;line-height:1.6;
+    min-height:120px;resize:vertical;outline:none;transition:border-color 0.2s;
+  }
+  .method-card textarea:focus{border-color:var(--amber)}
+  .method-card .meta-tag{
+    display:inline-block;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;
+    color:var(--amber);border:1px solid var(--amber);padding:2px 8px;margin-bottom:14px;
+  }
+  .revisao-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+  .revisao-cards div{
+    background:var(--bg);border:1px solid var(--line-strong);padding:10px 8px;text-align:center;
+  }
+  .revisao-cards div b{display:block;font-family:'Bebas Neue',sans-serif;color:var(--amber);font-size:22px}
+  .revisao-cards div small{font-size:9px;letter-spacing:0.1em;color:var(--muted);text-transform:uppercase}
+  .save-status{font-size:10px;color:var(--muted);margin-top:8px;font-style:italic}
+  .save-status.saved{color:var(--green)}
+
+  /* WELCOME SCREEN */
+  .welcome{
+    position:fixed;inset:0;z-index:50;background:var(--bg);
+    display:flex;align-items:center;justify-content:center;flex-direction:column;
+    padding:40px;text-align:center;
+  }
+  .welcome.hidden{display:none}
+  .welcome h1{font-family:'Bebas Neue',sans-serif;font-size:80px;letter-spacing:0.05em;line-height:0.95;margin-bottom:14px}
+  .welcome h1 span{color:var(--amber)}
+  .welcome p{max-width:520px;color:var(--muted);line-height:1.7;margin-bottom:28px;font-size:13px}
+  .welcome .buttons{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+  .welcome small{margin-top:24px;font-size:10px;letter-spacing:0.2em;color:var(--muted);max-width:500px;line-height:1.7}
+  .insignia{
+    font-family:'Bebas Neue',sans-serif;letter-spacing:0.5em;font-size:11px;
+    color:var(--amber);margin-bottom:10px;
+  }
+  .insignia::before,.insignia::after{content:"━━";margin:0 12px;color:var(--line-strong)}
+
+  /* NOTES VIEW */
+  .notes-page{
+    position:relative;z-index:2;display:grid;grid-template-columns:1fr;gap:24px;
+    padding:36px;max-width:1500px;margin:0 auto;
+  }
+  @media(min-width:980px){.notes-page{grid-template-columns:260px 1fr}}
+  .notes-sidebar{
+    background:var(--panel);border:1px solid var(--line);padding:22px;
+    align-self:start;position:sticky;top:24px;
+  }
+  .notes-sidebar-head{margin-bottom:14px}
+  .subject-list{list-style:none;display:flex;flex-direction:column;gap:2px;margin:0;padding:0}
+  .subject-list li{
+    padding:10px 12px;cursor:pointer;font-size:12px;color:var(--text);
+    border-left:2px solid transparent;display:flex;justify-content:space-between;align-items:center;
+    transition:all 0.15s;background:transparent;
+  }
+  .subject-list li:hover{background:var(--bg-2);border-left-color:var(--line-strong)}
+  .subject-list li.active{background:rgba(244,183,64,0.08);border-left-color:var(--amber);color:var(--amber)}
+  .subject-list li .count{
+    font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:0.05em;
+    color:var(--muted);min-width:24px;text-align:right;
+  }
+  .subject-list li.active .count{color:var(--amber)}
+  .subject-list li.subject-all{margin-bottom:8px;border-bottom:1px solid var(--line);padding-bottom:14px}
+  .notes-meta{
+    margin-top:18px;padding-top:14px;border-top:1px solid var(--line-strong);
+    display:flex;gap:18px;justify-content:space-around;text-align:center;
+  }
+  .notes-meta b{display:block;font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--amber);line-height:1}
+  .notes-meta small{font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted)}
+
+  .notes-main{min-width:0}
+  .notes-header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:28px;flex-wrap:wrap}
+  .notes-label{font-size:10px;letter-spacing:0.3em;color:var(--amber);text-transform:uppercase;margin-bottom:8px}
+  .notes-main h2{font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:0.02em;line-height:1}
+  .notes-sub{color:var(--muted);font-size:12px;margin-top:8px;max-width:560px;line-height:1.7}
+  .notes-feed{display:flex;flex-direction:column;gap:24px}
+  .empty-notes{
+    text-align:center;padding:60px 20px;border:1px dashed var(--line-strong);background:var(--panel);
+  }
+  .empty-notes svg{margin-bottom:14px;opacity:0.5}
+  .empty-notes p{color:var(--muted);font-size:12px;margin-bottom:18px}
+
+  /* POST CARD */
+  .post{
+    background:var(--panel);border:1px solid var(--line);padding:32px;position:relative;
+    transition:border-color 0.2s;
+  }
+  .post:hover{border-color:var(--line-strong)}
+  .post .corner{position:absolute;width:10px;height:10px;border:1px solid var(--amber);opacity:0.5}
+  .post .corner.tl{top:-1px;left:-1px;border-right:none;border-bottom:none}
+  .post .corner.br{bottom:-1px;right:-1px;border-left:none;border-top:none}
+  .post-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line-strong)}
+  .post-meta{font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted)}
+  .post-subject{color:var(--amber);font-weight:600}
+  .post-actions{display:flex;gap:6px}
+  .post-actions button{
+    background:transparent;border:1px solid var(--line-strong);color:var(--muted);
+    padding:4px 10px;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;
+    font-family:inherit;transition:all 0.15s;
+  }
+  .post-actions button:hover{border-color:var(--amber);color:var(--amber)}
+  .post h3{font-family:'Fraunces',serif;font-size:26px;font-weight:600;letter-spacing:-0.01em;margin-bottom:18px}
+  .post-content{font-size:14px;line-height:1.8;color:var(--text)}
+  .post-content h1,.post-content h2,.post-content h3,.post-content h4{font-family:'Fraunces',serif;font-weight:600;margin:18px 0 8px}
+  .post-content h1{font-size:20px;color:var(--amber)}
+  .post-content h2{font-size:18px;color:var(--amber)}
+  .post-content h3{font-size:16px}
+  .post-content p{margin-bottom:12px}
+  .post-content ul,.post-content ol{margin:8px 0 12px 22px}
+  .post-content li{margin-bottom:4px}
+  .post-content blockquote{
+    border-left:3px solid var(--amber);padding:6px 14px;margin:12px 0;
+    color:var(--muted);font-style:italic;background:var(--bg-2);
+  }
+  .post-content code{
+    background:var(--bg-2);padding:1px 6px;border:1px solid var(--line-strong);
+    font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--amber);
+  }
+  .post-content strong{color:var(--text);font-weight:700}
+  .post-content em{color:var(--muted)}
+  .post-content hr{border:none;border-top:1px dashed var(--line-strong);margin:18px 0}
+  .post-content img{
+    max-width:100%;display:block;margin:14px auto;border:1px solid var(--line-strong);
+    background:var(--bg-2);cursor:zoom-in;transition:transform 0.2s;
+  }
+  .post-content img:hover{transform:scale(1.01);border-color:var(--amber)}
+
+  /* NOTE EDITOR MODAL */
+  .note-editor-modal{max-width:780px!important;max-height:90vh;overflow-y:auto}
+  .editor-toolbar{
+    display:flex;align-items:center;gap:4px;flex-wrap:wrap;
+    background:var(--bg);border:1px solid var(--line-strong);border-bottom:none;padding:6px;
+  }
+  .ed-btn{
+    background:transparent;border:1px solid transparent;color:var(--muted);
+    width:32px;height:30px;font-family:inherit;cursor:pointer;font-size:12px;
+    display:flex;align-items:center;justify-content:center;transition:all 0.15s;
+  }
+  .ed-btn:hover{background:var(--bg-2);color:var(--amber);border-color:var(--line-strong)}
+  .ed-btn-image{width:auto;padding:0 10px;font-size:10px;letter-spacing:0.1em;text-transform:uppercase}
+  .ed-divider{width:1px;height:18px;background:var(--line-strong);margin:0 4px}
+  #neContent{font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.7;min-height:280px}
+  .editor-preview-toggle{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:10px}
+  .editor-hint{color:var(--muted);letter-spacing:0.1em}
+  .note-preview{
+    margin-top:14px;padding:18px;background:var(--bg);border:1px dashed var(--line-strong);
+    max-height:340px;overflow-y:auto;font-size:13px;line-height:1.7;
+  }
+  .note-preview h1,.note-preview h2,.note-preview h3{font-family:'Fraunces',serif;color:var(--amber);margin:10px 0 6px}
+  .note-preview img{max-width:100%;display:block;margin:10px auto;border:1px solid var(--line-strong)}
+  .note-preview ul,.note-preview ol{margin:6px 0 8px 20px}
+  .note-preview blockquote{border-left:2px solid var(--amber);padding:4px 10px;color:var(--muted);font-style:italic;margin:8px 0}
+  .note-preview hr{border:none;border-top:1px dashed var(--line-strong);margin:14px 0}
+  .note-preview code{background:var(--bg-2);padding:1px 5px;font-family:'JetBrains Mono',monospace;color:var(--amber);font-size:12px}
+
+  /* IMAGE LIGHTBOX */
+  .lightbox{
+    position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:300;
+    display:none;align-items:center;justify-content:center;padding:40px;cursor:zoom-out;
+  }
+  .lightbox.show{display:flex}
+  .lightbox img{max-width:95vw;max-height:90vh;border:1px solid var(--amber)}
+</style>
+</head>
+<body>
+
+<!-- WELCOME SCREEN -->
+<div class="welcome hidden" id="welcome">
+  <div class="insignia">OPERAÇÃO PRF</div>
+  <h1>PERFIL DE<br/><span>CONCURSEIRO</span></h1>
+  <p id="welcomeMsg">Seus dados ficam num arquivo TXT no seu computador. Você escolhe onde salvar. Carregue um arquivo existente ou crie um novo para começar.</p>
+  <div class="buttons" id="welcomeButtons">
+    <button class="btn primary" onclick="createNewFile()">Criar novo arquivo</button>
+    <button class="btn" onclick="loadExistingFile()">Carregar arquivo existente</button>
+    <button class="btn ghost" onclick="useDemo()">Modo demonstração</button>
+  </div>
+  <small>Compatível com navegadores baseados em Chromium (Chrome, Edge, Brave, Opera). No Firefox/Safari, o app funciona em modo download/upload.</small>
+</div>
+
+<!-- LOADING SCREEN (auto-load attempt) -->
+<div class="welcome" id="loading">
+  <div class="insignia">OPERAÇÃO PRF</div>
+  <h1>CARREGANDO<br/><span>PERFIL</span></h1>
+  <p style="color:var(--amber)">Buscando arquivo salvo...</p>
+  <div style="margin-top:20px;display:flex;gap:6px">
+    <span style="width:8px;height:8px;background:var(--amber);border-radius:50%;animation:bounce 1s infinite"></span>
+    <span style="width:8px;height:8px;background:var(--amber);border-radius:50%;animation:bounce 1s infinite 0.15s"></span>
+    <span style="width:8px;height:8px;background:var(--amber);border-radius:50%;animation:bounce 1s infinite 0.3s"></span>
+  </div>
+</div>
+
+<style>
+  @keyframes bounce { 0%,100%{transform:translateY(0);opacity:0.3} 50%{transform:translateY(-10px);opacity:1} }
+  .reconnect-btn{
+    background:var(--amber)!important;color:#000!important;border-color:var(--amber)!important;
+    animation:glow 2s infinite;
+  }
+  @keyframes glow { 0%,100%{box-shadow:0 0 0 0 rgba(244,183,64,0.5)} 50%{box-shadow:0 0 0 12px rgba(244,183,64,0)} }
+</style>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="left">
+    <span class="brand">OP·PRF</span>
+    <nav class="tabs">
+      <button class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')">Dashboard</button>
+      <button class="tab" data-tab="notes" onclick="switchTab('notes')">Anotações</button>
+      <button class="tab" data-tab="methods" onclick="switchTab('methods')">Métodos</button>
+    </nav>
+    <span id="dateStamp"></span>
+  </div>
+  <div class="right">
+    <span class="file-status" id="fileStatus">[ sem arquivo ]</span>
+    <button class="btn ghost" onclick="exportTxt()">Exportar TXT</button>
+    <button class="btn ghost" onclick="resetData()" title="Apaga tudo">Reset</button>
+  </div>
+</div>
+
+<!-- DASHBOARD VIEW -->
+<section class="view active" id="view-dashboard">
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- PROFILE -->
+  <div class="card profile">
+    <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+    <div class="avatar-wrap">
+      <div class="avatar-ring"></div>
+      <div class="avatar" id="avatar" onclick="openModal('profileModal')"></div>
+    </div>
+    <h1 id="userName">Concurseiro</h1>
+    <div class="codename" id="userCodename">// CANDIDATO PRF</div>
+    <div class="quote" id="userQuote">"A farda não vem fácil. Vem para quem aguentar."</div>
+    <div class="profile-edit">
+      <button class="btn" onclick="openModal('profileModal')">Editar perfil</button>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="label">// Missão em andamento</div>
+    <h2 id="heroHours">000<span>H</span></h2>
+    <div class="sub">Horas totais acumuladas rumo à aprovação. Cada hora é uma pedra na construção da estabilidade. O concurso PRF exige consistência: o ideal é 4 a 6 horas de estudo focado por dia. E de 6 a 8 horas/dia no pós-edital.</div>
+    <div class="meta">
+      <div class="meta-item"><b id="streakDays">0</b><small>streak atual</small></div>
+      <div class="meta-item"><b id="bestStreak">0</b><small>maior streak</small></div>
+      <div class="meta-item"><b id="bestDay">0h</b><small>melhor dia</small></div>
+      <div class="meta-item"><b id="weekAvg">0h</b><small>média 7d</small></div>
+      <div class="meta-item"><b id="monthTotal">0h</b><small>mês atual</small></div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat">
+      <div class="num" id="statGreen">0</div>
+      <div class="lbl">Dias verdes</div>
+      <div class="sub">Estudo completo</div>
+    </div>
+    <div class="stat">
+      <div class="num" id="statBrown">0</div>
+      <div class="lbl">Dias marrons</div>
+      <div class="sub">4h ≤ estudo &lt; 6h</div>
+    </div>
+    <div class="stat">
+      <div class="num" id="statYellow">0</div>
+      <div class="lbl">Dias amarelos</div>
+      <div class="sub">Horas em falta</div>
+    </div>
+    <div class="stat">
+      <div class="num" id="statRed">0</div>
+      <div class="lbl">Dias vermelhos</div>
+      <div class="sub">Falha total</div>
+    </div>
+  </div>
+
+  <!-- CYCLE -->
+  <div class="card cycle">
+    <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+    <div class="card-title">Ciclo de estudo <span class="badge" id="cycleCount">0 disciplinas</span></div>
+    <div id="cycleGraphContainer"></div>
+    <div class="cycle-actions">
+      <button class="btn" onclick="openModal('cycleModal')">+ Adicionar disciplina</button>
+      <button class="btn" onclick="advanceCycle()" title="Marca a próxima disciplina como atual">→ Avançar ciclo</button>
+      <button class="btn ghost" onclick="clearCycle()">Limpar ciclo</button>
+    </div>
+    <div class="cycle-list" id="cycleList"></div>
+  </div>
+
+  <!-- LEVEL -->
+  <div class="card level">
+    <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+    <div class="card-title">Sistema de patente <span class="badge" id="totalHoursBadge">0H</span></div>
+    <div class="level-display">
+      <div class="level-num" id="levelNum">1</div>
+      <div class="level-info">
+        <div class="level-rank" id="levelRank">Aspirante</div>
+        <div class="level-tag" id="levelTag">// Início da jornada</div>
+        <div class="progress"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+        <div class="progress-text">
+          <span id="progressCurrent">0h</span>
+          <span id="progressNeeded">próximo: 50h</span>
+        </div>
+      </div>
+    </div>
+    <div class="ranks-list" id="ranksList"></div>
+  </div>
+
+  <!-- CALENDAR -->
+  <div class="card calendar">
+    <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+    <div class="calendar-header">
+      <div class="year-nav">
+        <button onclick="changeYear(-1)">‹</button>
+        <h3 id="currentYear">2026</h3>
+        <button onclick="changeYear(1)">›</button>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--red)"></i>Falha total</span>
+        <span><i style="background:var(--brown)"></i>4h ≤ X &lt; 6h</span>
+        <span><i style="background:var(--yellow)"></i>Horas em falta</span>
+        <span><i style="background:var(--green)"></i>Estudo completo (6h+)</span>
+      </div>
+    </div>
+    <div class="months-grid" id="monthsGrid"></div>
+  </div>
+
+  <!-- QUESTIONS -->
+  <div class="card questions">
+    <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+    <div class="card-title">Questões resolvidas <span class="badge" id="qTotalBadge">0 total</span></div>
+    <div class="q-grid">
+      <div class="q-source">
+        <div class="q-source-head">
+          <span class="q-tag">PDF</span>
+          <span class="q-name">Estratégia</span>
+        </div>
+        <div class="q-controls">
+          <button class="q-btn" onclick="adjustQ('estrategia',-10)" title="-10">−10</button>
+          <button class="q-btn" onclick="adjustQ('estrategia',-1)" title="-1">−1</button>
+          <input type="number" id="qEstrategia" min="0" onchange="setQ('estrategia',this.value)" />
+          <button class="q-btn" onclick="adjustQ('estrategia',1)" title="+1">+1</button>
+          <button class="q-btn primary" onclick="adjustQ('estrategia',10)" title="+10">+10</button>
+        </div>
+        <div class="q-bar"><div class="q-bar-fill" id="qBarEstrategia"></div></div>
+      </div>
+
+      <div class="q-source">
+        <div class="q-source-head">
+          <span class="q-tag">SITE</span>
+          <span class="q-name">Qconcursos</span>
+        </div>
+        <div class="q-controls">
+          <button class="q-btn" onclick="adjustQ('qconcursos',-10)">−10</button>
+          <button class="q-btn" onclick="adjustQ('qconcursos',-1)">−1</button>
+          <input type="number" id="qQconcursos" min="0" onchange="setQ('qconcursos',this.value)" />
+          <button class="q-btn" onclick="adjustQ('qconcursos',1)">+1</button>
+          <button class="q-btn primary" onclick="adjustQ('qconcursos',10)">+10</button>
+        </div>
+        <div class="q-bar"><div class="q-bar-fill" id="qBarQconcursos"></div></div>
+      </div>
+
+      <div class="q-source">
+        <div class="q-source-head">
+          <span class="q-tag">MISC</span>
+          <span class="q-name">Outras fontes</span>
+        </div>
+        <div class="q-controls">
+          <button class="q-btn" onclick="adjustQ('outras',-10)">−10</button>
+          <button class="q-btn" onclick="adjustQ('outras',-1)">−1</button>
+          <input type="number" id="qOutras" min="0" onchange="setQ('outras',this.value)" />
+          <button class="q-btn" onclick="adjustQ('outras',1)">+1</button>
+          <button class="q-btn primary" onclick="adjustQ('outras',10)">+10</button>
+        </div>
+        <div class="q-bar"><div class="q-bar-fill" id="qBarOutras"></div></div>
+      </div>
+
+      <div class="q-total-card">
+        <div class="q-total-num" id="qTotalNum">0</div>
+        <div class="q-total-label">questões totais</div>
+        <div class="q-total-sub" id="qTotalSub">— por fonte</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="card log">
+    <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+    <div class="card-title">Registrar dia de estudo</div>
+    <div class="log-grid">
+      <form class="log-form" onsubmit="saveLog(event)">
+        <div class="field">
+          <label>Data</label>
+          <input type="date" id="logDate" required />
+        </div>
+        <div class="field">
+          <label>Horas estudadas</label>
+          <input type="number" step="0.5" min="0" max="24" id="logHours" placeholder="ex: 6.5" required />
+        </div>
+        <div class="field">
+          <label>Status do dia</label>
+          <select id="logStatus" required>
+            <option value="green">🟢 Verde — Estudo completo (6h+)</option>
+            <option value="brown">🟤 Marrom — 4h até 6h</option>
+            <option value="yellow">🟡 Amarelo — Horas em falta</option>
+            <option value="red">🔴 Vermelho — Falha total</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Observação (opcional)</label>
+          <textarea id="logNote" rows="2" placeholder="Como foi o dia?"></textarea>
+        </div>
+        <button type="submit" class="btn primary">Registrar dia</button>
+      </form>
+      <div>
+        <div class="card-title" style="margin-bottom:14px">Últimos registros</div>
+        <div class="recent" id="recentList"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</section>
+<!-- END DASHBOARD VIEW -->
+
+<!-- METHODS VIEW -->
+<section class="view" id="view-methods">
+  <div class="methods-page">
+    <div class="methods-header">
+      <h2>MÉTODOS DE<br/><span>ESTUDO</span></h2>
+      <p>Suas anotações pessoais sobre cada técnica. Cada bloco salva automaticamente no TXT — registra o que está funcionando, ajusta o que não está. As técnicas abaixo são as bases científicas mais consolidadas para retenção de longo prazo.</p>
+    </div>
+
+    <div class="methods-grid">
+
+      <div class="method-card">
+        <span class="num">01</span>
+        <div class="ico">⟳</div>
+        <span class="meta-tag">Planejamento</span>
+        <h3>Intercalação de tópicos</h3>
+        <div class="desc">Rotaciona disciplinas em ciclo curto em vez de bloco longo de uma só. O cérebro consolida melhor quando precisa "trocar de marcha" — embora pareça mais difícil, retém mais.</div>
+        <textarea id="method-intercalacao" placeholder="Como você organiza seu ciclo? Quais disciplinas estão dando mais retorno? Ajustes a fazer..."></textarea>
+        <div class="save-status" id="save-intercalacao"></div>
+      </div>
+
+      <div class="method-card">
+        <span class="num">02</span>
+        <div class="ico">F</div>
+        <span class="meta-tag">Compreensão</span>
+        <h3>Técnica de Feynman</h3>
+        <div class="desc">Explicar um conceito como se fosse pra uma criança. Onde você trava, ali está o buraco real de entendimento. Voltar à fonte só nessa parte, repetir.</div>
+        <textarea id="method-feynman" placeholder="Quais conceitos você já tentou explicar dessa forma? Onde travou? O que vai revisitar..."></textarea>
+        <div class="save-status" id="save-feynman"></div>
+      </div>
+
+      <div class="method-card">
+        <span class="num">03</span>
+        <div class="ico">≡</div>
+        <span class="meta-tag">Memorização</span>
+        <h3>Codificação dupla</h3>
+        <div class="desc">Combinar texto + imagem/diagrama/esquema. Duas vias neurais pra mesma informação = retenção bem mais forte. Mapas mentais, fluxogramas, desenhos toscos.</div>
+        <textarea id="method-codificacao" placeholder="Que tipo de esquema visual funciona melhor pra você? Mapas? Fluxos? Exemplos..."></textarea>
+        <div class="save-status" id="save-codificacao"></div>
+      </div>
+
+      <div class="method-card">
+        <span class="num">04</span>
+        <div class="ico">⧗</div>
+        <span class="meta-tag">Foco</span>
+        <h3>Pomodoro</h3>
+        <div class="desc">Blocos de 25min de foco total + 5min de pausa. A cada 4 ciclos, pausa longa (15-30min). Combate fadiga e procrastinação por design.</div>
+        <textarea id="method-pomodoro" placeholder="Sua configuração de pomodoro está funcionando? 25/5 ou ajustou? Quantos por sessão..."></textarea>
+        <div class="save-status" id="save-pomodoro"></div>
+      </div>
+
+      <div class="method-card">
+        <span class="num">05</span>
+        <div class="ico">A</div>
+        <span class="meta-tag">Recuperação ativa · Anki</span>
+        <h3>Flashcards / Recuperação ativa</h3>
+        <div class="desc">Tentar lembrar antes de revisar é o que fixa de verdade. Releitura passiva engana. Anki força você a recuperar a informação, e o algoritmo já espaça automaticamente.</div>
+        <textarea id="method-flashcards" placeholder="Decks ativos no Anki, quantos cards/dia, taxa de acerto, decks que precisa criar..."></textarea>
+        <div class="save-status" id="save-flashcards"></div>
+      </div>
+
+      <div class="method-card">
+        <span class="num">06</span>
+        <div class="ico">R</div>
+        <span class="meta-tag">Repetição espaçada · Pastas</span>
+        <h3>Repetição espaçada</h3>
+        <div class="desc">Revisar com intervalos crescentes consolida a memória de longo prazo. Você tem o sistema R1/R2/R3/R4:</div>
+        <div class="revisao-cards">
+          <div><b>R1</b><small>1 dia</small></div>
+          <div><b>R2</b><small>7 dias</small></div>
+          <div><b>R3</b><small>15 dias</small></div>
+          <div><b>R4</b><small>30 dias</small></div>
+        </div>
+        <textarea id="method-revisao" placeholder="Como está sua pasta R1/R2/R3/R4? Matérias atrasadas? Próximas revisões..."></textarea>
+        <div class="save-status" id="save-revisao"></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+<!-- END METHODS VIEW -->
+
+<!-- NOTES VIEW -->
+<section class="view" id="view-notes">
+  <div class="notes-page">
+    <aside class="notes-sidebar">
+      <div class="notes-sidebar-head">
+        <div class="card-title" style="margin-bottom:0">Disciplinas</div>
+      </div>
+      <ul class="subject-list" id="subjectList"></ul>
+      <div class="notes-meta">
+        <div><b id="notesTotalCount">0</b><small>posts totais</small></div>
+        <div><b id="notesImgCount">0</b><small>imagens</small></div>
+      </div>
+    </aside>
+
+    <main class="notes-main">
+      <header class="notes-header">
+        <div>
+          <div class="notes-label">// Caderno digital</div>
+          <h2 id="notesTitle">Selecione uma disciplina</h2>
+          <p class="notes-sub" id="notesSubtitle">Anote mnemônicos, esquemas, dicas e imagens importantes de cada matéria.</p>
+        </div>
+        <button class="btn primary" id="newNoteBtn" onclick="openNoteEditor()" style="display:none">+ Novo post</button>
+      </header>
+      <div id="notesFeed" class="notes-feed"></div>
+    </main>
+  </div>
+</section>
+<!-- END NOTES VIEW -->
+
+<div class="footer">
+  Operação PRF // <span>Persistência</span> · <span>Disciplina</span> · <span>Farda</span>
+</div>
+
+<!-- PROFILE MODAL -->
+<div class="modal-bg" id="profileModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('profileModal')">×</button>
+    <h3>Editar perfil</h3>
+    <div class="field"><label>Nome</label><input type="text" id="pmName" /></div>
+    <div class="field"><label>Codinome / cargo alvo</label><input type="text" id="pmCodename" /></div>
+    <div class="field"><label>URL do avatar</label><input type="text" id="pmAvatar" placeholder="https://..." /></div>
+    <div class="field"><label>Frase / lema</label><textarea id="pmQuote" rows="2"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('profileModal')">Cancelar</button>
+      <button class="btn primary" onclick="saveProfile()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CYCLE MODAL -->
+<div class="modal-bg" id="cycleModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('cycleModal')">×</button>
+    <h3>Adicionar disciplina</h3>
+    <div class="field"><label>Nome da disciplina</label><input type="text" id="cmName" placeholder="ex: Português" /></div>
+    <div class="field"><label>Peso / prioridade (1-10)</label><input type="number" id="cmWeight" min="1" max="10" value="5" /></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeModal('cycleModal')">Cancelar</button>
+      <button class="btn primary" onclick="saveCycleItem()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- DAY MODAL (calendar click) -->
+<div class="modal-bg" id="dayModal">
+  <div class="modal">
+    <button class="close-x" onclick="closeModal('dayModal')">×</button>
+    <h3 id="dayModalTitle">Editar dia</h3>
+    <div class="field"><label>Horas estudadas</label><input type="number" step="0.5" min="0" max="24" id="dmHours" /></div>
+    <div class="field">
+      <label>Status</label>
+      <select id="dmStatus">
+        <option value="green">🟢 Verde — Estudo completo (6h+)</option>
+        <option value="brown">🟤 Marrom — 4h até 6h</option>
+        <option value="yellow">🟡 Amarelo — Horas em falta</option>
+        <option value="red">🔴 Vermelho — Falha total</option>
+      </select>
+    </div>
+    <div class="field"><label>Observação</label><textarea id="dmNote" rows="2"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="deleteDayEntry()">Remover</button>
+      <button class="btn primary" onclick="saveDayEntry()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTE EDITOR MODAL -->
+<div class="modal-bg" id="noteEditorModal">
+  <div class="modal note-editor-modal">
+    <button class="close-x" onclick="closeNoteEditor()">×</button>
+    <h3 id="noteEditorTitle">Novo post</h3>
+    <div class="field"><label>Disciplina</label><select id="neSubject"></select></div>
+    <div class="field"><label>Título</label><input type="text" id="neTitle" placeholder="Ex: Mnemônico para crase" /></div>
+    <div class="field">
+      <label>Conteúdo</label>
+      <div class="editor-toolbar">
+        <button type="button" class="ed-btn" onclick="edWrap('**','**')" title="Negrito"><b>B</b></button>
+        <button type="button" class="ed-btn" onclick="edWrap('*','*')" title="Itálico"><i>I</i></button>
+        <button type="button" class="ed-btn" onclick="edWrap('`','`')" title="Código"><code>{}</code></button>
+        <span class="ed-divider"></span>
+        <button type="button" class="ed-btn" onclick="edHeading()" title="Título">H</button>
+        <button type="button" class="ed-btn" onclick="edPrefix('- ')" title="Lista">•</button>
+        <button type="button" class="ed-btn" onclick="edPrefix('> ')" title="Citação">"</button>
+        <button type="button" class="ed-btn" onclick="edInsert('\n---\n')" title="Separador">―</button>
+        <span class="ed-divider"></span>
+        <button type="button" class="ed-btn ed-btn-image" onclick="document.getElementById('neImageInput').click()" title="Adicionar imagem">⌕ Imagem</button>
+        <input type="file" id="neImageInput" accept="image/*" style="display:none" onchange="handleImageUpload(event)" />
+      </div>
+      <textarea id="neContent" rows="14" placeholder="Escreve sua anotação...&#10;&#10;Suporta **negrito**, *itálico*, # títulos, - listas, > citações.&#10;&#10;Cole ou anexe imagens com o botão acima — ficam embutidas no TXT."></textarea>
+    </div>
+    <div class="editor-preview-toggle">
+      <button type="button" class="btn ghost" onclick="toggleNotePreview()" id="previewToggleBtn">Ver preview</button>
+      <span class="editor-hint">Imagens são salvas dentro do TXT como base64.</span>
+    </div>
+    <div id="notePreview" class="note-preview" style="display:none"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeNoteEditor()">Cancelar</button>
+      <button class="btn ghost" id="deleteNoteBtn" onclick="deleteCurrentNote()" style="display:none;color:var(--red)">Apagar post</button>
+      <button class="btn primary" onclick="saveNote()">Salvar post</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- IMAGE LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <img id="lightboxImg" src="" alt="" />
+</div>
+
+<script>
+/* =========================================================
+   ESTADO + PERSISTÊNCIA EM ARQUIVO TXT
+   Formato do TXT (chave=valor por linha, e seções):
+   [profile]
+   name=...
+   codename=...
+   avatar=...
+   quote=...
+   [cycle]
+   Português|5
+   Direito Const|8
+   [days]
+   2026-05-22|6.5|green|Bom foco hoje
+   ========================================================= */
+
+let state = {
+  profile: {
+    name: "Concurseiro",
+    codename: "// CANDIDATO PRF",
+    avatar: "",
+    quote: "A farda não vem fácil. Vem para quem aguentar."
+  },
+  cycle: [], // {name, weight}
+  currentCycleIndex: -1, // índice da disciplina atual do ciclo (-1 = nenhuma)
+  methods: {}, // {methodKey: "anotações livres do usuário"}
+  questions: { estrategia: 0, qconcursos: 0, outras: 0 }, // questões resolvidas por fonte
+  notes: [], // [{id, subject, title, content, images:[dataUrl], created, updated}]
+  days: {}   // "YYYY-MM-DD": {hours, status, note}
+};
+let fileHandle = null;
+let viewYear = new Date().getFullYear();
+let editingDay = null;
+let editingNoteId = null;
+let currentNoteSubject = null;
+
+// Lista fixa de disciplinas para anotações (independente do cycle)
+const NOTE_SUBJECTS = [
+  "Português",
+  "Direito Penal",
+  "Ética",
+  "Física",
+  "Trânsito",
+  "Direitos Humanos",
+  "Direito Constitucional",
+  "Geopolítica",
+  "Direito Administrativo",
+  "Racioc. Logic. Matematico",
+  "LEG.P",
+  "Direito Processual Penal"
+];
+
+// --- PATENTES (sistema de level por horas totais) ---
+// Baseado em ~6-8h/dia. 1000h ≈ ~5 meses de estudo intenso.
+const RANKS = [
+  {lvl:1,  name:"Aspirante",       tag:"Início da jornada",  hours:0},
+  {lvl:2,  name:"Recruta",         tag:"Pegando o ritmo",    hours:50},
+  {lvl:3,  name:"Soldado",         tag:"Disciplina forjada", hours:150},
+  {lvl:4,  name:"Cabo",            tag:"Constância real",    hours:300},
+  {lvl:5,  name:"3º Sargento",     tag:"Veterano do edital", hours:500},
+  {lvl:6,  name:"2º Sargento",     tag:"Operacional",        hours:800},
+  {lvl:7,  name:"1º Sargento",     tag:"Força bruta",        hours:1100},
+  {lvl:8,  name:"Subtenente",      tag:"Quase lá",           hours:1500},
+  {lvl:9,  name:"2º Tenente",      tag:"Pronto pra prova",   hours:2000},
+  {lvl:10, name:"1º Tenente",      tag:"Aprovação à vista",  hours:2500},
+  {lvl:11, name:"Capitão PRF",     tag:"Farda merecida",     hours:3000}
+];
+
+/* ===================== INDEXEDDB (guarda o file handle entre sessões) ===================== */
+const DB_NAME = "prf-perfil-db";
+const STORE = "handles";
+function openDB(){
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function saveHandle(handle){
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORE, "readwrite");
+    tx.objectStore(STORE).put(handle, "config");
+    return new Promise(r => tx.oncomplete = () => r());
+  } catch(e) { console.warn("saveHandle falhou", e); }
+}
+async function loadHandle(){
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORE, "readonly");
+    const req = tx.objectStore(STORE).get("config");
+    return new Promise(r => { req.onsuccess = () => r(req.result); req.onerror = () => r(null); });
+  } catch(e) { return null; }
+}
+async function clearHandle(){
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORE, "readwrite");
+    tx.objectStore(STORE).delete("config");
+    return new Promise(r => tx.oncomplete = () => r());
+  } catch(e) {}
+}
+
+/* ===================== AUTO-LOAD ao abrir o site ===================== */
+async function autoLoadOnBoot(){
+  // Sem File System Access API → vai direto pra welcome
+  if (!window.showOpenFilePicker) {
+    showWelcome(false);
+    return;
+  }
+  const saved = await loadHandle();
+  if (!saved) {
+    // Nunca usou antes → welcome normal
+    showWelcome(false);
+    return;
+  }
+  // Tenta usar permissão já concedida (sem prompt) primeiro
+  try {
+    const perm = await saved.queryPermission({mode:"readwrite"});
+    if (perm === "granted") {
+      await activateHandle(saved);
+      return;
+    }
+    // Precisa de gesto do usuário pra pedir permissão → mostra welcome com botão de reconexão
+    showWelcome(true, saved);
+  } catch(e) {
+    console.warn("autoLoad falhou", e);
+    showWelcome(false);
+  }
+}
+
+async function activateHandle(handle){
+  try {
+    const file = await handle.getFile();
+    const text = await file.text();
+    fileHandle = handle;
+    state = parseTxt(text);
+    document.getElementById("loading").classList.add("hidden");
+    document.getElementById("welcome").classList.add("hidden");
+    setFileStatus("● " + handle.name, true);
+    renderAll();
+    toast("Perfil carregado automaticamente.");
+  } catch(e) {
+    console.warn("activateHandle falhou", e);
+    await clearHandle();
+    showWelcome(false);
+  }
+}
+
+function showWelcome(reconnect, savedHandle){
+  document.getElementById("loading").classList.add("hidden");
+  const welcome = document.getElementById("welcome");
+  welcome.classList.remove("hidden");
+  const msg = document.getElementById("welcomeMsg");
+  const buttons = document.getElementById("welcomeButtons");
+  if (reconnect && savedHandle) {
+    msg.innerHTML = `Já existe um arquivo de perfil salvo — <b style="color:var(--amber)">${escapeHtml(savedHandle.name)}</b>.<br/>Reconecte para retomar de onde parou.`;
+    buttons.innerHTML = `
+      <button class="btn reconnect-btn" onclick="reconnectHandle()">⟲ Reconectar perfil</button>
+      <button class="btn ghost" onclick="forgetAndShowDefault()">Usar outro arquivo</button>
+    `;
+  } else {
+    msg.textContent = "Seus dados ficam num arquivo TXT no seu computador. Você escolhe onde salvar. Carregue um arquivo existente ou crie um novo para começar.";
+    buttons.innerHTML = `
+      <button class="btn primary" onclick="createNewFile()">Criar novo arquivo</button>
+      <button class="btn" onclick="loadExistingFile()">Carregar arquivo existente</button>
+      <button class="btn ghost" onclick="useDemo()">Modo demonstração</button>
+    `;
+  }
+}
+
+async function reconnectHandle(){
+  const saved = await loadHandle();
+  if (!saved) { showWelcome(false); return; }
+  try {
+    const perm = await saved.requestPermission({mode:"readwrite"});
+    if (perm === "granted") {
+      await activateHandle(saved);
+    } else {
+      toast("Permissão negada.");
+    }
+  } catch(e) {
+    console.warn(e);
+    toast("Não foi possível reconectar.");
+    await clearHandle();
+    showWelcome(false);
+  }
+}
+
+async function forgetAndShowDefault(){
+  await clearHandle();
+  showWelcome(false);
+}
+
+/* ===================== TXT SERIALIZATION ===================== */
+function serializeTxt(){
+  let out = "# OPERAÇÃO PRF — Banco de dados do perfil\n";
+  out += "# Gerado em " + new Date().toISOString() + "\n\n";
+  out += "[profile]\n";
+  out += "name=" + state.profile.name + "\n";
+  out += "codename=" + state.profile.codename + "\n";
+  out += "avatar=" + state.profile.avatar + "\n";
+  out += "quote=" + state.profile.quote + "\n\n";
+  out += "[cycle]\n";
+  state.cycle.forEach(c => out += c.name + "|" + c.weight + "\n");
+  out += "\n[cycle_current]\n";
+  out += (state.currentCycleIndex ?? -1) + "\n\n";
+  out += "[methods]\n";
+  Object.keys(state.methods).forEach(k => {
+    const safe = (state.methods[k]||"").replace(/\\/g,"\\\\").replace(/\n/g,"\\n");
+    out += k + "=" + safe + "\n";
+  });
+  out += "\n[questions]\n";
+  out += "estrategia=" + (state.questions?.estrategia||0) + "\n";
+  out += "qconcursos=" + (state.questions?.qconcursos||0) + "\n";
+  out += "outras=" + (state.questions?.outras||0) + "\n\n";
+  out += "[notes]\n";
+  // formato por linha: id|subject|created|updated|title|content
+  // tudo após o 5º pipe pertence ao content. Escapes: \\ -> \, \n -> nova linha, \p -> |
+  (state.notes||[]).forEach(n => {
+    const enc = s => String(s||"").replace(/\\/g,"\\\\").replace(/\|/g,"\\p").replace(/\n/g,"\\n");
+    out += [n.id, enc(n.subject), n.created||"", n.updated||"", enc(n.title), enc(n.content)].join("|") + "\n";
+  });
+  out += "\n[days]\n";
+  Object.keys(state.days).sort().forEach(d => {
+    const e = state.days[d];
+    out += d + "|" + e.hours + "|" + e.status + "|" + (e.note||"") + "\n";
+  });
+  return out;
+}
+
+function parseTxt(text){
+  const ns = {
+    profile:{name:"Concurseiro",codename:"// CANDIDATO PRF",avatar:"",quote:""},
+    cycle:[],
+    currentCycleIndex:-1,
+    methods:{},
+    questions:{estrategia:0, qconcursos:0, outras:0},
+    notes:[],
+    days:{}
+  };
+  let section = "";
+  text.split(/\r?\n/).forEach(raw => {
+    // não trim — conteúdo de notes pode ter espaços relevantes; trim só se vazio
+    const line = raw;
+    if (!line.trim() || line.trim().startsWith("#")) return;
+    const trimmed = line.trim();
+    if (trimmed.startsWith("[") && trimmed.endsWith("]")) { section = trimmed.slice(1,-1); return; }
+    if (section === "profile") {
+      const idx = trimmed.indexOf("=");
+      if (idx > -1) {
+        const k = trimmed.slice(0,idx).trim();
+        const v = trimmed.slice(idx+1);
+        if (k in ns.profile) ns.profile[k] = v;
+      }
+    } else if (section === "cycle") {
+      const parts = trimmed.split("|");
+      if (parts.length >= 2) ns.cycle.push({name:parts[0],weight:parseInt(parts[1])||5});
+    } else if (section === "cycle_current") {
+      const n = parseInt(trimmed);
+      if (!isNaN(n)) ns.currentCycleIndex = n;
+    } else if (section === "methods") {
+      const idx = trimmed.indexOf("=");
+      if (idx > -1) {
+        const k = trimmed.slice(0,idx).trim();
+        const v = trimmed.slice(idx+1).replace(/\\n/g,"\n").replace(/\\\\/g,"\\");
+        ns.methods[k] = v;
+      }
+    } else if (section === "questions") {
+      const idx = trimmed.indexOf("=");
+      if (idx > -1) {
+        const k = trimmed.slice(0,idx).trim();
+        const v = parseInt(trimmed.slice(idx+1)) || 0;
+        if (k in ns.questions) ns.questions[k] = v;
+      }
+    } else if (section === "notes") {
+      // split apenas nos primeiros 5 pipes; resto é content
+      const dec = s => String(s||"").replace(/\\p/g,"|").replace(/\\n/g,"\n").replace(/\\\\/g,"\\");
+      const parts = [];
+      let buf = "", i = 0;
+      while (i < trimmed.length && parts.length < 5) {
+        if (trimmed[i] === "\\" && i+1 < trimmed.length) { buf += trimmed[i] + trimmed[i+1]; i += 2; continue; }
+        if (trimmed[i] === "|") { parts.push(buf); buf = ""; i++; continue; }
+        buf += trimmed[i]; i++;
+      }
+      buf += trimmed.slice(i); // resto = content
+      parts.push(buf);
+      if (parts.length >= 6) {
+        ns.notes.push({
+          id: parts[0],
+          subject: dec(parts[1]),
+          created: parts[2],
+          updated: parts[3],
+          title: dec(parts[4]),
+          content: dec(parts[5])
+        });
+      }
+    } else if (section === "days") {
+      const parts = trimmed.split("|");
+      if (parts.length >= 3) {
+        let status = parts[2];
+        if (status === "purple") status = "green";
+        ns.days[parts[0]] = {
+          hours: parseFloat(parts[1])||0,
+          status: status,
+          note: parts.slice(3).join("|") || ""
+        };
+      }
+    }
+  });
+  return ns;
+}
+
+/* ===================== FILE PERSISTENCE ===================== */
+async function createNewFile(){
+  if (!window.showSaveFilePicker) {
+    // Fallback: usa modo download
+    state = defaultState();
+    document.getElementById("welcome").classList.add("hidden");
+    setFileStatus("[ modo download/upload ]", false);
+    renderAll();
+    toast("Modo download ativado. Exporte/importe o TXT manualmente.");
+    return;
+  }
+  try {
+    fileHandle = await window.showSaveFilePicker({
+      suggestedName: "perfil_prf.txt",
+      types: [{description:"Arquivo TXT", accept:{"text/plain":[".txt"]}}]
+    });
+    state = defaultState();
+    await writeFile();
+    await saveHandle(fileHandle);
+    document.getElementById("welcome").classList.add("hidden");
+    setFileStatus("● " + fileHandle.name, true);
+    renderAll();
+    toast("Arquivo criado. Salvamento automático ativo.");
+  } catch(e) { console.log("cancelado",e); }
+}
+
+async function loadExistingFile(){
+  if (!window.showOpenFilePicker) {
+    // fallback: upload
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".txt";
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const text = await file.text();
+      state = parseTxt(text);
+      document.getElementById("welcome").classList.add("hidden");
+      setFileStatus("[ modo download/upload ]", false);
+      renderAll();
+      toast("Arquivo carregado. Use Exportar TXT para salvar mudanças.");
+    };
+    input.click();
+    return;
+  }
+  try {
+    const [h] = await window.showOpenFilePicker({
+      types: [{description:"Arquivo TXT", accept:{"text/plain":[".txt"]}}]
+    });
+    fileHandle = h;
+    const file = await fileHandle.getFile();
+    const text = await file.text();
+    state = parseTxt(text);
+    await saveHandle(fileHandle);
+    document.getElementById("welcome").classList.add("hidden");
+    setFileStatus("● " + fileHandle.name, true);
+    renderAll();
+    toast("Arquivo carregado. Salvamento automático ativo.");
+  } catch(e) { console.log("cancelado",e); }
+}
+
+function useDemo(){
+  state = defaultState();
+  // Adicionar exemplos
+  state.cycle = [
+    {name:"Português",weight:8},
+    {name:"Direito Const.",weight:9},
+    {name:"Direito Admin.",weight:8},
+    {name:"Legislação Trânsito",weight:10},
+    {name:"Raciocínio Lógico",weight:6},
+    {name:"Informática",weight:5},
+    {name:"Ética",weight:4}
+  ];
+  const today = new Date();
+  for (let i = 0; i < 20; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const iso = d.toISOString().slice(0,10);
+    const r = Math.random();
+    if (r < 0.55) state.days[iso] = {hours: 6+Math.random()*3, status:"green", note:""};
+    else if (r < 0.85) state.days[iso] = {hours: 4+Math.random()*1.5, status:"brown", note:""};
+    else if (r < 0.93) state.days[iso] = {hours: 3+Math.random()*1.5, status:"yellow", note:""};
+    else state.days[iso] = {hours: 0, status:"red", note:""};
+  }
+  document.getElementById("welcome").classList.add("hidden");
+  setFileStatus("[ modo demo — não persiste ]", false);
+  renderAll();
+  toast("Modo demonstração ativado.");
+}
+
+function defaultState(){
+  return {
+    profile:{
+      name:"Gabriel",
+      codename:"// FUTURO POLICIAL RODOVIÁRIO FEDERAL",
+      avatar:"",
+      quote:"A farda não vem fácil. Vem para quem aguentar."
+    },
+    cycle:[],
+    currentCycleIndex:-1,
+    methods:{},
+    questions:{estrategia:0, qconcursos:0, outras:0},
+    notes:[],
+    days:{}
+  };
+}
+
+async function writeFile(){
+  if (!fileHandle) return;
+  try {
+    const writable = await fileHandle.createWritable();
+    await writable.write(serializeTxt());
+    await writable.close();
+  } catch(e) { console.error("erro ao salvar",e); toast("Erro ao salvar no arquivo."); }
+}
+
+function exportTxt(){
+  const blob = new Blob([serializeTxt()], {type:"text/plain"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "perfil_prf.txt";
+  a.click();
+  URL.revokeObjectURL(url);
+  toast("TXT exportado.");
+}
+
+async function persist(){
+  if (fileHandle) await writeFile();
+}
+
+function setFileStatus(txt, connected){
+  const el = document.getElementById("fileStatus");
+  el.textContent = txt;
+  el.classList.toggle("connected", !!connected);
+}
+
+function resetData(){
+  if (!confirm("Tem certeza? Isso vai apagar TUDO do perfil.")) return;
+  state = defaultState();
+  renderAll();
+  persist();
+  toast("Dados resetados.");
+}
+
+/* ===================== RENDER ===================== */
+function renderAll(){
+  renderProfile();
+  renderHero();
+  renderStats();
+  renderCycle();
+  renderLevel();
+  renderCalendar();
+  renderRecent();
+  renderQuestions();
+  renderMethods();
+  renderNotes();
+  document.getElementById("dateStamp").textContent = "// " + new Date().toLocaleDateString("pt-BR");
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById("logDate").value = today;
+}
+
+function renderProfile(){
+  document.getElementById("userName").textContent = state.profile.name || "Concurseiro";
+  document.getElementById("userCodename").textContent = state.profile.codename || "// CANDIDATO PRF";
+  document.getElementById("userQuote").textContent = state.profile.quote ? `"${state.profile.quote}"` : "";
+  const av = document.getElementById("avatar");
+  if (state.profile.avatar) {
+    av.style.backgroundImage = `url('${state.profile.avatar}')`;
+    av.innerHTML = "";
+  } else {
+    av.style.backgroundImage = "none";
+    av.style.background = "var(--bg-2)";
+    av.innerHTML = `<svg width='80' height='80' viewBox='0 0 24 24' fill='none' stroke='var(--amber)' stroke-width='1' style='margin:40px'><circle cx='12' cy='8' r='4'/><path d='M4 22c0-4 4-7 8-7s8 3 8 7'/></svg>`;
+    av.style.display = "flex";
+    av.style.alignItems = "center";
+    av.style.justifyContent = "center";
+  }
+}
+
+function totalHours(){
+  return Object.values(state.days).reduce((s,d)=>s+(parseFloat(d.hours)||0),0);
+}
+
+function renderHero(){
+  const total = totalHours();
+  document.getElementById("heroHours").innerHTML = Math.floor(total).toString().padStart(3,"0") + "<span>H</span>";
+
+  const today = new Date();
+
+  // streak atual: conta dias registrados em sequência sem vermelho/amarelo,
+  // de trás pra frente a partir do dia mais recente registrado.
+  let streak = 0;
+  const sortedDays = Object.keys(state.days).sort();
+  if (sortedDays.length > 0) {
+    for (let i = sortedDays.length - 1; i >= 0; i--) {
+      const e = state.days[sortedDays[i]];
+      if (e.status === "red" || e.status === "yellow") break;
+      streak++;
+    }
+  }
+  document.getElementById("streakDays").textContent = streak;
+
+  // maior streak histórico: maior sequência de dias verdes/marrons sem nenhum vermelho/amarelo no meio
+  let bestStreak = 0, curStreak = 0;
+  sortedDays.forEach(d => {
+    const e = state.days[d];
+    if (e.status === "red" || e.status === "yellow") {
+      curStreak = 0;
+    } else {
+      curStreak++;
+      if (curStreak > bestStreak) bestStreak = curStreak;
+    }
+  });
+  document.getElementById("bestStreak").textContent = bestStreak;
+
+  // best day
+  let best = 0;
+  Object.values(state.days).forEach(d => { if (d.hours > best) best = d.hours; });
+  document.getElementById("bestDay").textContent = best.toFixed(1).replace(/\.0$/,"") + "h";
+
+  // last 7 days average
+  let sum7 = 0, count7 = 0;
+  for (let i=0;i<7;i++) {
+    const d = new Date(today); d.setDate(d.getDate()-i);
+    const iso = d.toISOString().slice(0,10);
+    if (state.days[iso]) { sum7 += state.days[iso].hours; count7++; }
+  }
+  const avg7 = count7 ? (sum7/7) : 0;
+  document.getElementById("weekAvg").textContent = avg7.toFixed(1) + "h";
+
+  // month
+  const ym = today.toISOString().slice(0,7);
+  let monthSum = 0;
+  Object.entries(state.days).forEach(([k,v]) => { if (k.startsWith(ym)) monthSum += v.hours; });
+  document.getElementById("monthTotal").textContent = Math.floor(monthSum) + "h";
+}
+
+function renderStats(){
+  let g=0,y=0,r=0,br=0;
+  Object.values(state.days).forEach(d=>{
+    if (d.status==="green") g++;
+    else if (d.status==="yellow") y++;
+    else if (d.status==="red") r++;
+    else if (d.status==="brown") br++;
+  });
+  document.getElementById("statGreen").textContent = g;
+  document.getElementById("statBrown").textContent = br;
+  document.getElementById("statYellow").textContent = y;
+  document.getElementById("statRed").textContent = r;
+}
+
+function renderCycle(){
+  document.getElementById("cycleCount").textContent = state.cycle.length + " disciplina" + (state.cycle.length===1?"":"s");
+  const container = document.getElementById("cycleGraphContainer");
+  container.innerHTML = drawCycleGraph();
+  const list = document.getElementById("cycleList");
+  const current = state.currentCycleIndex;
+  list.innerHTML = state.cycle.map((c,i) => {
+    const isCurrent = i === current;
+    return `
+    <div class="cycle-item ${isCurrent?'cycle-item-current':''}">
+      <span class="cycle-pos">${String(i+1).padStart(2,'0')}</span>
+      <span class="cycle-name">${escapeHtml(c.name)}${isCurrent?' <em>· atual</em>':''}</span>
+      <span class="cycle-weight">peso ${c.weight}</span>
+      <button onclick="setCurrentCycle(${i})" title="Marcar como atual" class="cycle-btn-mark">${isCurrent?'★':'☆'}</button>
+      <button onclick="removeCycleItem(${i})" title="Remover" class="cycle-btn-del">×</button>
+    </div>`;
+  }).join("");
+}
+
+function drawCycleGraph(){
+  const n = state.cycle.length;
+  if (n === 0) return `<div style="text-align:center;color:var(--muted);padding:40px;font-size:12px">Nenhuma disciplina cadastrada.<br/>Adicione disciplinas para visualizar o ciclo.</div>`;
+
+  const current = state.currentCycleIndex;
+  const next = current >= 0 ? (current + 1) % n : -1;
+
+  // Layout adaptativo: para ciclos grandes (>8) usa SVG maior com labels rotacionados
+  // Para pequenos, usa layout compacto.
+  const big = n > 8;
+  const w = big ? 560 : 460;
+  const h = big ? 560 : 380;
+  const cx = w/2, cy = h/2;
+  // raio interno (centro até nós) — deixa espaço pros labels do lado de fora
+  const labelSpace = big ? 90 : 70;
+  const r = Math.min(w,h)/2 - labelSpace;
+
+  // tamanho dos nós: nós pequenos quando há muitos
+  const nodeBase = big ? 6 : 8;
+  const weightMult = big ? 0.8 : 1.5;
+
+  // posições
+  const nodes = state.cycle.map((c,i) => {
+    const ang = (i/n) * Math.PI * 2 - Math.PI/2;
+    return {
+      x: cx + r*Math.cos(ang),
+      y: cy + r*Math.sin(ang),
+      name: c.name,
+      weight: c.weight,
+      ang,
+      index: i
+    };
+  });
+
+  // edges (curva do ciclo) — uso arcos sutis pra ficar elegante
+  let edges = "";
+  for (let i=0;i<n;i++){
+    const a = nodes[i];
+    const b = nodes[(i+1)%n];
+    const isActiveEdge = (i === current);
+    const stroke = isActiveEdge ? "var(--amber)" : "var(--line-strong)";
+    const sw = isActiveEdge ? 1.8 : 1;
+    const dash = isActiveEdge ? "" : 'stroke-dasharray="3,4"';
+    edges += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${stroke}" stroke-width="${sw}" ${dash} />`;
+    // setinha no meio
+    const mx = (a.x+b.x)/2, my = (a.y+b.y)/2;
+    const dx = b.x-a.x, dy = b.y-a.y;
+    const arrowAng = Math.atan2(dy,dx);
+    const arrowSize = isActiveEdge ? 9 : 6;
+    const arrowColor = isActiveEdge ? "var(--amber)" : "var(--line-strong)";
+    edges += `<polygon points="${mx},${my} ${mx-arrowSize*Math.cos(arrowAng-0.4)},${my-arrowSize*Math.sin(arrowAng-0.4)} ${mx-arrowSize*Math.cos(arrowAng+0.4)},${my-arrowSize*Math.sin(arrowAng+0.4)}" fill="${arrowColor}" />`;
+  }
+
+  // nós + labels
+  let circles = "";
+  nodes.forEach((nd) => {
+    const radius = nodeBase + nd.weight * weightMult;
+    const isCur = nd.index === current;
+    const isNext = nd.index === next && current >= 0;
+
+    // fill e stroke por status do nó
+    let fill = "var(--bg-2)";
+    let stroke = "var(--amber)";
+    let strokeWidth = 1.5;
+    let glow = "";
+    if (isCur) {
+      fill = "var(--amber)";
+      stroke = "var(--amber)";
+      strokeWidth = 2.5;
+      glow = `<circle cx="${nd.x}" cy="${nd.y}" r="${radius+10}" fill="none" stroke="var(--amber)" stroke-width="1" opacity="0.35"><animate attributeName="r" from="${radius+4}" to="${radius+18}" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" from="0.6" to="0" dur="2s" repeatCount="indefinite"/></circle>`;
+    } else if (isNext) {
+      stroke = "var(--green)";
+      strokeWidth = 2;
+    }
+
+    // label posicionado no lado externo, opcionalmente rotacionado
+    const labelDist = radius + (big ? 16 : 14);
+    const lx = cx + (r + labelDist) * Math.cos(nd.ang);
+    const ly = cy + (r + labelDist) * Math.sin(nd.ang);
+    // ângulo do label em graus
+    let labelAng = nd.ang * 180 / Math.PI;
+    // texto à direita do círculo (lado direito da tela) fica normal, à esquerda rotaciona 180
+    let anchor = "middle";
+    let textRotation = 0;
+    if (big) {
+      // labels seguem o ângulo radial, ajustados pra leitura
+      if (labelAng > 90 || labelAng < -90) {
+        textRotation = labelAng + 180;
+        anchor = "end";
+      } else {
+        textRotation = labelAng;
+        anchor = "start";
+      }
+    }
+
+    const dot = isCur ? "" : `<circle cx="${nd.x}" cy="${nd.y}" r="${Math.max(2, radius*0.3)}" fill="${isCur?'#000':'var(--amber)'}"/>`;
+    const labelColor = isCur ? "var(--amber)" : (isNext ? "var(--green)" : "var(--text)");
+    const labelWeight = isCur ? "700" : "400";
+    const maxLen = big ? 18 : 14;
+    const labelText = escapeHtml(nd.name.length > maxLen ? nd.name.slice(0, maxLen-1) + "…" : nd.name);
+
+    if (big) {
+      circles += `<g>
+        ${glow}
+        <circle cx="${nd.x}" cy="${nd.y}" r="${radius}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"/>
+        ${dot}
+        <g transform="translate(${lx},${ly}) rotate(${textRotation})">
+          <text text-anchor="${anchor}" dominant-baseline="middle" fill="${labelColor}" font-family="JetBrains Mono" font-size="11" font-weight="${labelWeight}">${labelText}</text>
+          <text text-anchor="${anchor}" dominant-baseline="middle" y="13" fill="var(--muted)" font-family="JetBrains Mono" font-size="8">peso ${nd.weight}</text>
+        </g>
+      </g>`;
+    } else {
+      circles += `<g>
+        ${glow}
+        <circle cx="${nd.x}" cy="${nd.y}" r="${radius}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"/>
+        ${dot}
+        <text x="${nd.x}" y="${nd.y + radius + 14}" text-anchor="middle" fill="${labelColor}" font-family="JetBrains Mono" font-size="10" font-weight="${labelWeight}">${labelText}</text>
+        <text x="${nd.x}" y="${nd.y + radius + 26}" text-anchor="middle" fill="var(--muted)" font-family="JetBrains Mono" font-size="8">peso ${nd.weight}</text>
+      </g>`;
+    }
+  });
+
+  // centro: nome da disciplina atual + meta
+  const currentName = current >= 0 ? state.cycle[current].name : null;
+  const centerLabel = currentName
+    ? `<g>
+        <circle cx="${cx}" cy="${cy}" r="${big?70:50}" fill="var(--bg)" stroke="var(--amber)" stroke-width="1.5"/>
+        <circle cx="${cx}" cy="${cy}" r="${big?78:58}" fill="none" stroke="var(--line-strong)" stroke-dasharray="2,5"/>
+        <text x="${cx}" y="${cy-22}" text-anchor="middle" fill="var(--amber)" font-family="Bebas Neue" font-size="11" letter-spacing="3">ESTUDANDO</text>
+        <text x="${cx}" y="${cy-2}" text-anchor="middle" fill="var(--text)" font-family="Fraunces" font-size="${big?17:14}" font-weight="600">${escapeHtml(currentName.length>18?currentName.slice(0,17)+'…':currentName)}</text>
+        <text x="${cx}" y="${cy+18}" text-anchor="middle" fill="var(--muted)" font-family="JetBrains Mono" font-size="9">${current+1} de ${n}</text>
+        <text x="${cx}" y="${cy+35}" text-anchor="middle" fill="var(--green)" font-family="JetBrains Mono" font-size="8" letter-spacing="1">próx: ${escapeHtml(state.cycle[next].name.length>14?state.cycle[next].name.slice(0,13)+'…':state.cycle[next].name)}</text>
+      </g>`
+    : `<g>
+        <circle cx="${cx}" cy="${cy}" r="${big?60:40}" fill="none" stroke="var(--line-strong)" stroke-dasharray="2,4"/>
+        <text x="${cx}" y="${cy-3}" text-anchor="middle" fill="var(--amber)" font-family="Bebas Neue" font-size="16" letter-spacing="2">CICLO</text>
+        <text x="${cx}" y="${cy+14}" text-anchor="middle" fill="var(--muted)" font-family="JetBrains Mono" font-size="9">${n} disc.</text>
+        <text x="${cx}" y="${cy+30}" text-anchor="middle" fill="var(--muted)" font-family="JetBrains Mono" font-size="8">marque a atual ↓</text>
+      </g>`;
+
+  return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" style="max-height:${big?'520px':'380px'}">${edges}${centerLabel}${circles}</svg>`;
+}
+
+async function setCurrentCycle(i){
+  state.currentCycleIndex = (state.currentCycleIndex === i) ? -1 : i;
+  renderCycle();
+  await persist();
+}
+
+async function advanceCycle(){
+  if (state.cycle.length === 0) { toast("Adicione disciplinas primeiro."); return; }
+  if (state.currentCycleIndex < 0) state.currentCycleIndex = 0;
+  else state.currentCycleIndex = (state.currentCycleIndex + 1) % state.cycle.length;
+  renderCycle();
+  await persist();
+  toast("Próxima: " + state.cycle[state.currentCycleIndex].name);
+}
+
+function renderLevel(){
+  const total = totalHours();
+  let current = RANKS[0];
+  let next = RANKS[1];
+  for (let i = 0; i < RANKS.length; i++) {
+    if (total >= RANKS[i].hours) { current = RANKS[i]; next = RANKS[i+1] || null; }
+  }
+  document.getElementById("levelNum").textContent = current.lvl;
+  document.getElementById("levelRank").textContent = current.name;
+  document.getElementById("levelTag").textContent = "// " + current.tag;
+  document.getElementById("totalHoursBadge").textContent = Math.floor(total) + "H";
+
+  let pct = 100;
+  let progressText = "Patente máxima atingida";
+  if (next) {
+    const range = next.hours - current.hours;
+    const done = total - current.hours;
+    pct = Math.min(100, (done/range)*100);
+    progressText = "próximo: " + next.hours + "h";
+  }
+  document.getElementById("progressFill").style.width = pct + "%";
+  document.getElementById("progressCurrent").textContent = Math.floor(total) + "h";
+  document.getElementById("progressNeeded").textContent = progressText;
+
+  // lista de patentes
+  const list = document.getElementById("ranksList");
+  list.innerHTML = RANKS.map(r => {
+    const done = total >= r.hours;
+    const cur = r.lvl === current.lvl;
+    const cls = cur ? "current" : (done ? "done" : "");
+    return `<div class="rank-row ${cls}">
+      <span>${r.lvl}. ${r.name}</span>
+      <span>${r.hours}h</span>
+    </div>`;
+  }).join("");
+}
+
+function renderCalendar(){
+  document.getElementById("currentYear").textContent = viewYear;
+  const months = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+  const weekdays = ["D","S","T","Q","Q","S","S"];
+  const todayIso = new Date().toISOString().slice(0,10);
+  let html = "";
+  for (let m = 0; m < 12; m++) {
+    const first = new Date(viewYear, m, 1);
+    const startDay = first.getDay(); // 0 = dom
+    const daysInMonth = new Date(viewYear, m+1, 0).getDate();
+    // count days studied this month
+    let studied = 0;
+    Object.keys(state.days).forEach(k => {
+      if (k.startsWith(`${viewYear}-${String(m+1).padStart(2,"0")}`)) studied++;
+    });
+    html += `<div class="month">
+      <h4>${months[m]} <small>${studied}d</small></h4>
+      <div class="weekdays">${weekdays.map(d=>`<div>${d}</div>`).join("")}</div>
+      <div class="days">`;
+    for (let i = 0; i < startDay; i++) html += `<div class="day empty"></div>`;
+    for (let d = 1; d <= daysInMonth; d++) {
+      const iso = `${viewYear}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+      const entry = state.days[iso];
+      const status = entry ? entry.status : "";
+      const today = iso === todayIso ? "today" : "";
+      const title = entry ? `${iso} — ${entry.hours}h${entry.note?" — "+entry.note:""}` : iso;
+      html += `<div class="day ${today}" data-status="${status}" title="${escapeHtml(title)}" onclick="openDayEdit('${iso}')">${d}</div>`;
+    }
+    html += `</div></div>`;
+  }
+  document.getElementById("monthsGrid").innerHTML = html;
+}
+
+function renderRecent(){
+  const sorted = Object.entries(state.days).sort((a,b) => b[0].localeCompare(a[0])).slice(0,12);
+  const colorMap = {green:"var(--green)",yellow:"var(--yellow)",red:"var(--red)",brown:"var(--brown)"};
+  const list = document.getElementById("recentList");
+  if (sorted.length === 0) {
+    list.innerHTML = `<div style="color:var(--muted);font-size:11px;padding:14px;text-align:center">Nenhum registro ainda. Comece registrando o dia de hoje.</div>`;
+    return;
+  }
+  list.innerHTML = sorted.map(([k,v]) => {
+    const dt = new Date(k+"T00:00:00");
+    const fmt = dt.toLocaleDateString("pt-BR",{day:"2-digit",month:"short"});
+    return `<div class="recent-item">
+      <span class="dot" style="background:${colorMap[v.status]||"var(--muted)"}"></span>
+      <span class="date">${fmt}</span>
+      <span class="hrs">${v.hours}h</span>
+      <span class="note">${escapeHtml(v.note||"—")}</span>
+      <button class="btn ghost" style="padding:4px 8px;font-size:9px" onclick="openDayEdit('${k}')">editar</button>
+    </div>`;
+  }).join("");
+}
+
+/* ===================== QUESTIONS ===================== */
+function renderQuestions(){
+  if (!state.questions) state.questions = {estrategia:0, qconcursos:0, outras:0};
+  const q = state.questions;
+  const e = q.estrategia||0, c = q.qconcursos||0, o = q.outras||0;
+  const total = e + c + o;
+  const elE = document.getElementById("qEstrategia");
+  const elC = document.getElementById("qQconcursos");
+  const elO = document.getElementById("qOutras");
+  if (elE && document.activeElement !== elE) elE.value = e;
+  if (elC && document.activeElement !== elC) elC.value = c;
+  if (elO && document.activeElement !== elO) elO.value = o;
+  document.getElementById("qTotalNum").textContent = total;
+  document.getElementById("qTotalBadge").textContent = total + " total";
+  // barras proporcionais ao máximo entre as fontes
+  const max = Math.max(e, c, o, 1);
+  document.getElementById("qBarEstrategia").style.width = (e/max*100) + "%";
+  document.getElementById("qBarQconcursos").style.width = (c/max*100) + "%";
+  document.getElementById("qBarOutras").style.width = (o/max*100) + "%";
+  // sub-info: top fonte
+  let top = "—";
+  if (total > 0) {
+    const arr = [["Estratégia",e],["Qconcursos",c],["Outras",o]];
+    arr.sort((a,b)=>b[1]-a[1]);
+    top = arr[0][0] + " lidera (" + Math.round(arr[0][1]/total*100) + "%)";
+  }
+  document.getElementById("qTotalSub").textContent = top;
+}
+
+async function setQ(key, val){
+  if (!state.questions) state.questions = {estrategia:0, qconcursos:0, outras:0};
+  const n = Math.max(0, parseInt(val) || 0);
+  state.questions[key] = n;
+  renderQuestions();
+  await persist();
+}
+
+async function adjustQ(key, delta){
+  if (!state.questions) state.questions = {estrategia:0, qconcursos:0, outras:0};
+  const cur = state.questions[key] || 0;
+  state.questions[key] = Math.max(0, cur + delta);
+  renderQuestions();
+  await persist();
+}
+
+/* ===================== NOTES (blog) ===================== */
+function renderNotes(){
+  if (!state.notes) state.notes = [];
+  // sidebar com contagem por disciplina
+  const counts = {};
+  NOTE_SUBJECTS.forEach(s => counts[s] = 0);
+  state.notes.forEach(n => {
+    if (counts[n.subject] === undefined) counts[n.subject] = 0;
+    counts[n.subject]++;
+  });
+
+  // popula sidebar
+  const sidebar = document.getElementById("subjectList");
+  if (sidebar) {
+    const all = `<li class="subject-all ${currentNoteSubject===null?'active':''}" onclick="selectSubject(null)">
+      <span>Todas as disciplinas</span><span class="count">${state.notes.length}</span>
+    </li>`;
+    sidebar.innerHTML = all + NOTE_SUBJECTS.map(s => `
+      <li class="${currentNoteSubject===s?'active':''}" onclick="selectSubject('${escapeJs(s)}')">
+        <span>${escapeHtml(s)}</span><span class="count">${counts[s]||0}</span>
+      </li>
+    `).join("");
+  }
+
+  // popula select de disciplina do editor
+  const sel = document.getElementById("neSubject");
+  if (sel) {
+    const currentVal = sel.value;
+    sel.innerHTML = NOTE_SUBJECTS.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join("");
+    if (currentVal) sel.value = currentVal;
+  }
+
+  // meta sidebar
+  const totalEl = document.getElementById("notesTotalCount");
+  const imgEl = document.getElementById("notesImgCount");
+  if (totalEl) totalEl.textContent = state.notes.length;
+  if (imgEl) {
+    let imgCount = 0;
+    state.notes.forEach(n => {
+      const matches = (n.content||"").match(/!\[[^\]]*\]\(data:image/g);
+      if (matches) imgCount += matches.length;
+    });
+    imgEl.textContent = imgCount;
+  }
+
+  // header da view de notes
+  const title = document.getElementById("notesTitle");
+  const sub = document.getElementById("notesSubtitle");
+  const btn = document.getElementById("newNoteBtn");
+  if (title && sub && btn) {
+    if (currentNoteSubject === null) {
+      title.textContent = "Todas as disciplinas";
+      sub.textContent = "Visão geral de todos os posts. Selecione uma disciplina à esquerda para focar.";
+      btn.style.display = "inline-block";
+    } else {
+      title.textContent = currentNoteSubject;
+      sub.textContent = `Anotações sobre ${currentNoteSubject}. ${counts[currentNoteSubject]||0} post${(counts[currentNoteSubject]||0)===1?'':'s'} registrado${(counts[currentNoteSubject]||0)===1?'':'s'}.`;
+      btn.style.display = "inline-block";
+    }
+  }
+
+  // feed
+  const feed = document.getElementById("notesFeed");
+  if (!feed) return;
+  let posts = state.notes.slice();
+  if (currentNoteSubject !== null) posts = posts.filter(n => n.subject === currentNoteSubject);
+  posts.sort((a,b) => (b.updated||b.created||"").localeCompare(a.updated||a.created||""));
+
+  if (posts.length === 0) {
+    feed.innerHTML = `<div class="empty-notes">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="1">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="9" y1="13" x2="15" y2="13"/>
+        <line x1="9" y1="17" x2="13" y2="17"/>
+      </svg>
+      <p>Nenhuma anotação ${currentNoteSubject?'em '+escapeHtml(currentNoteSubject):'ainda'}.<br/>Crie seu primeiro post pra começar.</p>
+      <button class="btn primary" onclick="openNoteEditor()">+ Novo post</button>
+    </div>`;
+    return;
+  }
+
+  feed.innerHTML = posts.map(n => {
+    const created = n.created ? new Date(n.created).toLocaleDateString("pt-BR",{day:"2-digit",month:"short",year:"numeric"}) : "";
+    const wasEdited = n.updated && n.updated !== n.created;
+    return `<article class="post" data-id="${n.id}">
+      <span class="corner tl"></span><span class="corner br"></span>
+      <div class="post-head">
+        <div class="post-meta">
+          <span class="post-subject">${escapeHtml(n.subject)}</span>
+          <span> · ${created}${wasEdited?' · editado':''}</span>
+        </div>
+        <div class="post-actions">
+          <button onclick="openNoteEditor('${escapeJs(n.id)}')">Editar</button>
+        </div>
+      </div>
+      <h3>${escapeHtml(n.title||'Sem título')}</h3>
+      <div class="post-content">${renderMarkdown(n.content||'')}</div>
+    </article>`;
+  }).join("");
+
+  // bind click nas imagens pra abrir lightbox
+  feed.querySelectorAll(".post-content img").forEach(img => {
+    img.addEventListener("click", () => openLightbox(img.src));
+  });
+}
+
+function selectSubject(s){
+  currentNoteSubject = s;
+  renderNotes();
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+
+/* ----- editor ----- */
+function openNoteEditor(id){
+  editingNoteId = id || null;
+  const subjectSel = document.getElementById("neSubject");
+  const titleInput = document.getElementById("neTitle");
+  const contentInput = document.getElementById("neContent");
+  const delBtn = document.getElementById("deleteNoteBtn");
+  document.getElementById("notePreview").style.display = "none";
+  document.getElementById("previewToggleBtn").textContent = "Ver preview";
+
+  if (id) {
+    const note = (state.notes||[]).find(n => n.id === id);
+    if (!note) return;
+    document.getElementById("noteEditorTitle").textContent = "Editar post";
+    subjectSel.value = note.subject;
+    titleInput.value = note.title || "";
+    contentInput.value = note.content || "";
+    delBtn.style.display = "inline-block";
+  } else {
+    document.getElementById("noteEditorTitle").textContent = "Novo post";
+    subjectSel.value = currentNoteSubject || NOTE_SUBJECTS[0];
+    titleInput.value = "";
+    contentInput.value = "";
+    delBtn.style.display = "none";
+  }
+  document.getElementById("noteEditorModal").classList.add("show");
+  setTimeout(() => titleInput.focus(), 50);
+}
+
+function closeNoteEditor(){
+  document.getElementById("noteEditorModal").classList.remove("show");
+  editingNoteId = null;
+}
+
+async function saveNote(){
+  const subject = document.getElementById("neSubject").value;
+  const title = document.getElementById("neTitle").value.trim();
+  const content = document.getElementById("neContent").value;
+  if (!title && !content.trim()) { toast("Adicione título ou conteúdo."); return; }
+  const now = new Date().toISOString();
+  if (!state.notes) state.notes = [];
+  if (editingNoteId) {
+    const idx = state.notes.findIndex(n => n.id === editingNoteId);
+    if (idx >= 0) {
+      state.notes[idx] = {...state.notes[idx], subject, title, content, updated: now};
+    }
+  } else {
+    state.notes.push({
+      id: "n" + Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+      subject, title, content,
+      created: now, updated: now
+    });
+  }
+  closeNoteEditor();
+  renderNotes();
+  await persist();
+  toast("Post salvo.");
+}
+
+async function deleteCurrentNote(){
+  if (!editingNoteId) return;
+  if (!confirm("Apagar este post? Esta ação não pode ser desfeita.")) return;
+  state.notes = (state.notes||[]).filter(n => n.id !== editingNoteId);
+  closeNoteEditor();
+  renderNotes();
+  await persist();
+  toast("Post apagado.");
+}
+
+/* ----- toolbar do editor ----- */
+function edWrap(before, after){
+  const ta = document.getElementById("neContent");
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  const sel = ta.value.slice(start, end);
+  const replacement = before + (sel || "texto") + after;
+  ta.setRangeText(replacement, start, end, "select");
+  ta.focus();
+}
+function edPrefix(prefix){
+  const ta = document.getElementById("neContent");
+  const start = ta.selectionStart;
+  // encontra início da linha
+  const before = ta.value.slice(0, start);
+  const lineStart = before.lastIndexOf("\n") + 1;
+  ta.setRangeText(prefix, lineStart, lineStart, "end");
+  ta.focus();
+}
+function edHeading(){
+  edPrefix("## ");
+}
+function edInsert(text){
+  const ta = document.getElementById("neContent");
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  ta.setRangeText(text, start, end, "end");
+  ta.focus();
+}
+
+async function handleImageUpload(event){
+  const file = event.target.files[0];
+  if (!file) return;
+  // limita tamanho pra não estourar o TXT (e o navegador)
+  const maxBytes = 2 * 1024 * 1024; // 2MB
+  if (file.size > maxBytes) {
+    if (!confirm(`Imagem grande (${(file.size/1024/1024).toFixed(1)}MB). Imagens grandes deixam o TXT pesado. Continuar?`)) {
+      event.target.value = "";
+      return;
+    }
+  }
+  toast("Processando imagem...");
+  try {
+    const dataUrl = await fileToDataUrl(file);
+    // tenta comprimir se for grande e não for gif/svg
+    let finalUrl = dataUrl;
+    if (file.type !== "image/gif" && file.type !== "image/svg+xml" && file.size > 200*1024) {
+      try { finalUrl = await compressImage(dataUrl, 1200, 0.82); } catch(e) { finalUrl = dataUrl; }
+    }
+    const alt = file.name.replace(/\.[^.]+$/,"");
+    const md = `\n\n![${alt}](${finalUrl})\n\n`;
+    edInsert(md);
+    toast("Imagem inserida.");
+  } catch(e) {
+    console.error(e);
+    toast("Erro ao processar imagem.");
+  }
+  event.target.value = "";
+}
+
+function fileToDataUrl(file){
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+function compressImage(dataUrl, maxDim, quality){
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if (w > maxDim || h > maxDim) {
+        if (w > h) { h = h * maxDim / w; w = maxDim; }
+        else { w = w * maxDim / h; h = maxDim; }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      res(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = rej;
+    img.src = dataUrl;
+  });
+}
+
+function toggleNotePreview(){
+  const pv = document.getElementById("notePreview");
+  const btn = document.getElementById("previewToggleBtn");
+  if (pv.style.display === "none") {
+    pv.innerHTML = renderMarkdown(document.getElementById("neContent").value);
+    pv.style.display = "block";
+    btn.textContent = "Ocultar preview";
+    // permitir clicar em imagem do preview pra abrir lightbox
+    pv.querySelectorAll("img").forEach(img => img.addEventListener("click", () => openLightbox(img.src)));
+  } else {
+    pv.style.display = "none";
+    btn.textContent = "Ver preview";
+  }
+}
+
+/* ----- mini markdown parser (seguro) ----- */
+function renderMarkdown(src){
+  if (!src) return "";
+  // primeiro escapa tudo, depois reintroduz a sintaxe controladamente
+  let lines = src.split("\n");
+  let html = "";
+  let i = 0;
+  let inList = null; // 'ul' | 'ol'
+  function closeList(){ if (inList) { html += `</${inList}>`; inList = null; } }
+  function inlineFmt(s){
+    s = escapeHtml(s);
+    // imagens: ![alt](url) — url pode conter parênteses no base64? Base64 não tem parênteses, ok.
+    s = s.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (m, alt, url) => {
+      // só permite data: URIs de imagem e http(s)
+      const safe = /^(data:image\/[a-z+]+;base64,[\w+/=\-.%]+|https?:\/\/)/i.test(url);
+      if (!safe) return m;
+      return `<img src="${url}" alt="${alt}" loading="lazy"/>`;
+    });
+    // negrito
+    s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    // itálico
+    s = s.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+    // código inline
+    s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
+    return s;
+  }
+
+  while (i < lines.length) {
+    const line = lines[i];
+    const trimmed = line.trim();
+    // headings
+    const hMatch = trimmed.match(/^(#{1,4})\s+(.*)$/);
+    if (hMatch) { closeList(); const lvl = hMatch[1].length; html += `<h${lvl}>${inlineFmt(hMatch[2])}</h${lvl}>`; i++; continue; }
+    // hr
+    if (/^-{3,}$/.test(trimmed) || /^\*{3,}$/.test(trimmed)) { closeList(); html += "<hr/>"; i++; continue; }
+    // blockquote
+    if (trimmed.startsWith("> ")) {
+      closeList();
+      const quoteLines = [];
+      while (i < lines.length && lines[i].trim().startsWith("> ")) {
+        quoteLines.push(lines[i].trim().slice(2));
+        i++;
+      }
+      html += `<blockquote>${inlineFmt(quoteLines.join(" "))}</blockquote>`;
+      continue;
+    }
+    // listas
+    if (/^[-*]\s+/.test(trimmed)) {
+      if (inList !== "ul") { closeList(); html += "<ul>"; inList = "ul"; }
+      html += `<li>${inlineFmt(trimmed.replace(/^[-*]\s+/,""))}</li>`;
+      i++; continue;
+    }
+    if (/^\d+\.\s+/.test(trimmed)) {
+      if (inList !== "ol") { closeList(); html += "<ol>"; inList = "ol"; }
+      html += `<li>${inlineFmt(trimmed.replace(/^\d+\.\s+/,""))}</li>`;
+      i++; continue;
+    }
+    // linha vazia
+    if (!trimmed) { closeList(); i++; continue; }
+    // parágrafo (pode conter imagem standalone)
+    closeList();
+    // se a linha é só uma imagem, não envolve em <p>
+    if (/^!\[[^\]]*\]\([^)]+\)$/.test(trimmed)) {
+      html += inlineFmt(trimmed);
+    } else {
+      html += `<p>${inlineFmt(trimmed)}</p>`;
+    }
+    i++;
+  }
+  closeList();
+  return html;
+}
+
+/* ----- lightbox ----- */
+function openLightbox(src){
+  document.getElementById("lightboxImg").src = src;
+  document.getElementById("lightbox").classList.add("show");
+}
+function closeLightbox(){
+  document.getElementById("lightbox").classList.remove("show");
+}
+
+function escapeJs(s){
+  return String(s||"").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+}
+
+/* ===================== ACTIONS ===================== */
+function changeYear(d){
+  viewYear += d;
+  renderCalendar();
+}
+
+function openModal(id){
+  if (id === "profileModal") {
+    document.getElementById("pmName").value = state.profile.name;
+    document.getElementById("pmCodename").value = state.profile.codename;
+    document.getElementById("pmAvatar").value = state.profile.avatar;
+    document.getElementById("pmQuote").value = state.profile.quote;
+  }
+  document.getElementById(id).classList.add("show");
+}
+function closeModal(id){ document.getElementById(id).classList.remove("show"); }
+
+async function saveProfile(){
+  state.profile.name = document.getElementById("pmName").value;
+  state.profile.codename = document.getElementById("pmCodename").value;
+  state.profile.avatar = document.getElementById("pmAvatar").value;
+  state.profile.quote = document.getElementById("pmQuote").value;
+  closeModal("profileModal");
+  renderProfile();
+  await persist();
+  toast("Perfil atualizado.");
+}
+
+async function saveCycleItem(){
+  const name = document.getElementById("cmName").value.trim();
+  const weight = parseInt(document.getElementById("cmWeight").value) || 5;
+  if (!name) { toast("Informe o nome da disciplina."); return; }
+  state.cycle.push({name, weight});
+  document.getElementById("cmName").value = "";
+  document.getElementById("cmWeight").value = "5";
+  closeModal("cycleModal");
+  renderCycle();
+  await persist();
+  toast("Disciplina adicionada.");
+}
+
+async function removeCycleItem(i){
+  state.cycle.splice(i,1);
+  renderCycle();
+  await persist();
+}
+
+async function clearCycle(){
+  if (!confirm("Limpar todo o ciclo?")) return;
+  state.cycle = [];
+  renderCycle();
+  await persist();
+}
+
+async function saveLog(e){
+  e.preventDefault();
+  const date = document.getElementById("logDate").value;
+  const hours = parseFloat(document.getElementById("logHours").value);
+  const status = document.getElementById("logStatus").value;
+  const note = document.getElementById("logNote").value;
+  if (!date || isNaN(hours)) return;
+  state.days[date] = {hours, status, note};
+  document.getElementById("logHours").value = "";
+  document.getElementById("logNote").value = "";
+  renderAll();
+  await persist();
+  toast("Dia registrado.");
+}
+
+function openDayEdit(iso){
+  editingDay = iso;
+  const entry = state.days[iso] || {hours:"",status:"green",note:""};
+  document.getElementById("dayModalTitle").textContent = "Dia " + new Date(iso+"T00:00:00").toLocaleDateString("pt-BR");
+  document.getElementById("dmHours").value = entry.hours;
+  document.getElementById("dmStatus").value = entry.status;
+  document.getElementById("dmNote").value = entry.note;
+  openModal("dayModal");
+}
+
+async function saveDayEntry(){
+  const h = parseFloat(document.getElementById("dmHours").value);
+  const s = document.getElementById("dmStatus").value;
+  const n = document.getElementById("dmNote").value;
+  if (isNaN(h)) { toast("Informe as horas."); return; }
+  state.days[editingDay] = {hours:h, status:s, note:n};
+  closeModal("dayModal");
+  renderAll();
+  await persist();
+  toast("Dia salvo.");
+}
+
+async function deleteDayEntry(){
+  if (!editingDay) return;
+  delete state.days[editingDay];
+  closeModal("dayModal");
+  renderAll();
+  await persist();
+  toast("Dia removido.");
+}
+
+/* ===================== UTIL ===================== */
+function escapeHtml(s){
+  if (s === null || s === undefined) return "";
+  return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(window.__toastT);
+  window.__toastT = setTimeout(() => t.classList.remove("show"), 2400);
+}
+
+// Esc fecha modais
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") {
+    document.querySelectorAll(".modal-bg.show").forEach(m => m.classList.remove("show"));
+    closeLightbox();
+  }
+});
+// Click fora fecha modal
+document.querySelectorAll(".modal-bg").forEach(m => {
+  m.addEventListener("click", e => { if (e.target === m) m.classList.remove("show"); });
+});
+
+/* ===================== TABS ===================== */
+function switchTab(name){
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === name));
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + name));
+  if (name === "methods") renderMethods();
+  if (name === "notes") renderNotes();
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+
+/* ===================== MÉTODOS (autosave com debounce) ===================== */
+const METHOD_KEYS = ["intercalacao","feynman","codificacao","pomodoro","flashcards","revisao"];
+let methodSaveTimers = {};
+
+function renderMethods(){
+  METHOD_KEYS.forEach(k => {
+    const ta = document.getElementById("method-" + k);
+    if (ta && ta.value !== (state.methods[k] || "")) {
+      ta.value = state.methods[k] || "";
+    }
+  });
+}
+
+function attachMethodAutosave(){
+  METHOD_KEYS.forEach(k => {
+    const ta = document.getElementById("method-" + k);
+    if (!ta) return;
+    ta.addEventListener("input", () => {
+      state.methods[k] = ta.value;
+      const status = document.getElementById("save-" + k);
+      status.textContent = "● editando...";
+      status.classList.remove("saved");
+      clearTimeout(methodSaveTimers[k]);
+      methodSaveTimers[k] = setTimeout(async () => {
+        await persist();
+        status.textContent = "✓ salvo";
+        status.classList.add("saved");
+        setTimeout(() => { status.textContent = ""; status.classList.remove("saved"); }, 2000);
+      }, 600);
+    });
+  });
+}
+attachMethodAutosave();
+
+// Ctrl+V de imagem no textarea de conteúdo do post
+document.addEventListener("paste", async (e) => {
+  const ta = document.getElementById("neContent");
+  if (!ta || document.activeElement !== ta) return;
+  const items = (e.clipboardData || window.clipboardData)?.items;
+  if (!items) return;
+  for (const item of items) {
+    if (item.type && item.type.startsWith("image/")) {
+      e.preventDefault();
+      const file = item.getAsFile();
+      if (!file) continue;
+      try {
+        let dataUrl = await fileToDataUrl(file);
+        if (file.size > 200*1024 && file.type !== "image/gif") {
+          try { dataUrl = await compressImage(dataUrl, 1200, 0.82); } catch(err) {}
+        }
+        edInsert(`\n\n![colado](${dataUrl})\n\n`);
+        toast("Imagem colada.");
+      } catch(err) { toast("Erro ao colar imagem."); }
+      return;
+    }
+  }
+});
+
+// ===================== BOOT =====================
+// Tenta carregar o arquivo de config salvo na sessão anterior.
+// Se não achar (ou for primeira visita / navegador sem suporte), mostra welcome.
+autoLoadOnBoot();
+</script>
+</body>
+</html>
